@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Worldbuilding API Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold text-center mb-8">Worldbuilding API Test</h1>
+        
+        <!-- Authentication Section -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">Authentication</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <h3 class="font-medium mb-2">Register</h3>
+                    <input type="text" id="reg-username" placeholder="Username" class="w-full p-2 border rounded mb-2">
+                    <input type="email" id="reg-email" placeholder="Email" class="w-full p-2 border rounded mb-2">
+                    <input type="password" id="reg-password" placeholder="Password" class="w-full p-2 border rounded mb-2">
+                    <button onclick="register()" class="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600">Register</button>
+                </div>
+                <div>
+                    <h3 class="font-medium mb-2">Login</h3>
+                    <input type="text" id="login-username" placeholder="Username" class="w-full p-2 border rounded mb-2">
+                    <input type="password" id="login-password" placeholder="Password" class="w-full p-2 border rounded mb-2">
+                    <button onclick="login()" class="w-full bg-green-500 text-white p-2 rounded hover:bg-green-600">Login</button>
+                </div>
+            </div>
+            <div id="auth-status" class="mt-4 p-2 rounded hidden"></div>
+        </div>
+
+        <!-- World Management Section -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">World Management</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <h3 class="font-medium mb-2">Create World</h3>
+                    <input type="text" id="world-title" placeholder="World Title" class="w-full p-2 border rounded mb-2">
+                    <textarea id="world-description" placeholder="World Description" class="w-full p-2 border rounded mb-2" rows="3"></textarea>
+                    <button onclick="createWorld()" class="w-full bg-purple-500 text-white p-2 rounded hover:bg-purple-600">Create World</button>
+                </div>
+                <div>
+                    <h3 class="font-medium mb-2">Your Worlds</h3>
+                    <button onclick="loadWorlds()" class="w-full bg-gray-500 text-white p-2 rounded hover:bg-gray-600 mb-2">Load Worlds</button>
+                    <div id="worlds-list" class="max-h-40 overflow-y-auto"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Content Creation Section -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">Content Creation</h2>
+            <div class="mb-4">
+                <label class="block font-medium mb-2">Select World:</label>
+                <select id="content-world-select" class="w-full p-2 border rounded">
+                    <option value="">Select a world first</option>
+                </select>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <h3 class="font-medium mb-2">Create Page</h3>
+                    <input type="text" id="page-title" placeholder="Page Title" class="w-full p-2 border rounded mb-2">
+                    <textarea id="page-content" placeholder="Page Content" class="w-full p-2 border rounded mb-2" rows="4"></textarea>
+                    <input type="text" id="page-summary" placeholder="Summary (optional)" class="w-full p-2 border rounded mb-2">
+                    <button onclick="createPage()" class="w-full bg-indigo-500 text-white p-2 rounded hover:bg-indigo-600">Create Page</button>
+                </div>
+                <div>
+                    <h3 class="font-medium mb-2">Create Character</h3>
+                    <input type="text" id="char-name" placeholder="Character Name" class="w-full p-2 border rounded mb-2">
+                    <input type="text" id="char-title" placeholder="Character Title" class="w-full p-2 border rounded mb-2">
+                    <textarea id="char-description" placeholder="Character Description" class="w-full p-2 border rounded mb-2" rows="3"></textarea>
+                    <button onclick="createCharacter()" class="w-full bg-red-500 text-white p-2 rounded hover:bg-red-600">Create Character</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Timeline Section -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-xl font-semibold mb-4">World Timeline</h2>
+            <button onclick="loadTimeline()" class="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 mb-4">Load Timeline</button>
+            <div id="timeline-content" class="space-y-4"></div>
+        </div>
+
+        <!-- Response Log -->
+        <div class="bg-gray-800 text-green-400 rounded-lg p-4 mt-6">
+            <h3 class="font-medium mb-2">API Response Log</h3>
+            <div id="response-log" class="text-sm font-mono max-h-60 overflow-y-auto"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000/api/v1';
+        let authToken = localStorage.getItem('access_token');
+        let currentWorldId = null;
+
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('response-log');
+            const timestamp = new Date().toLocaleTimeString();
+            const color = type === 'error' ? 'text-red-400' : type === 'success' ? 'text-green-400' : 'text-blue-400';
+            logDiv.innerHTML += `<div class="${color}">[${timestamp}] ${message}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function showStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('auth-status');
+            statusDiv.className = `mt-4 p-2 rounded ${type === 'error' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`;
+            statusDiv.textContent = message;
+            statusDiv.classList.remove('hidden');
+        }
+
+        async function apiCall(endpoint, method = 'GET', data = null) {
+            const headers = {
+                'Content-Type': 'application/json',
+            };
+            
+            if (authToken) {
+                headers['Authorization'] = `Bearer ${authToken}`;
+            }
+
+            const config = {
+                method,
+                headers,
+            };
+
+            if (data) {
+                config.body = JSON.stringify(data);
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}${endpoint}`, config);
+                const result = await response.json();
+                
+                log(`${method} ${endpoint} - ${response.status}`, response.ok ? 'success' : 'error');
+                
+                if (!response.ok) {
+                    log(`Error: ${JSON.stringify(result)}`, 'error');
+                }
+                
+                return { ok: response.ok, data: result, status: response.status };
+            } catch (error) {
+                log(`Network error: ${error.message}`, 'error');
+                return { ok: false, error: error.message };
+            }
+        }
+
+        async function register() {
+            const username = document.getElementById('reg-username').value;
+            const email = document.getElementById('reg-email').value;
+            const password = document.getElementById('reg-password').value;
+
+            if (!username || !email || !password) {
+                showStatus('Please fill all registration fields', 'error');
+                return;
+            }
+
+            const result = await apiCall('/register/', 'POST', { username, email, password });
+            
+            if (result.ok) {
+                showStatus('Registration successful! You can now login.', 'success');
+                // Clear form
+                document.getElementById('reg-username').value = '';
+                document.getElementById('reg-email').value = '';
+                document.getElementById('reg-password').value = '';
+            } else {
+                showStatus(`Registration failed: ${JSON.stringify(result.data)}`, 'error');
+            }
+        }
+
+        async function login() {
+            const username = document.getElementById('login-username').value;
+            const password = document.getElementById('login-password').value;
+
+            if (!username || !password) {
+                showStatus('Please fill all login fields', 'error');
+                return;
+            }
+
+            const result = await apiCall('/token/', 'POST', { username, password });
+            
+            if (result.ok) {
+                authToken = result.data.access;
+                localStorage.setItem('access_token', authToken);
+                showStatus(`Login successful! Welcome, ${username}`, 'success');
+                loadWorlds(); // Auto-load worlds after login
+            } else {
+                showStatus(`Login failed: ${JSON.stringify(result.data)}`, 'error');
+            }
+        }
+
+        async function createWorld() {
+            const title = document.getElementById('world-title').value;
+            const description = document.getElementById('world-description').value;
+
+            if (!title || !description) {
+                alert('Please fill in world title and description');
+                return;
+            }
+
+            const result = await apiCall('/worlds/', 'POST', { 
+                title, 
+                description, 
+                is_public: true 
+            });
+            
+            if (result.ok) {
+                log(`World created: ${result.data.title}`, 'success');
+                document.getElementById('world-title').value = '';
+                document.getElementById('world-description').value = '';
+                loadWorlds(); // Refresh worlds list
+            }
+        }
+
+        async function loadWorlds() {
+            const result = await apiCall('/worlds/');
+            
+            if (result.ok) {
+                const worldsList = document.getElementById('worlds-list');
+                const worldSelect = document.getElementById('content-world-select');
+                
+                worldsList.innerHTML = '';
+                worldSelect.innerHTML = '<option value="">Select a world</option>';
+                
+                result.data.results.forEach(world => {
+                    // Add to worlds list
+                    const worldDiv = document.createElement('div');
+                    worldDiv.className = 'p-2 border rounded mb-2 cursor-pointer hover:bg-gray-50';
+                    worldDiv.innerHTML = `
+                        <div class="font-medium">${world.title}</div>
+                        <div class="text-sm text-gray-600">${world.description}</div>
+                    `;
+                    worldDiv.onclick = () => selectWorld(world.id, world.title);
+                    worldsList.appendChild(worldDiv);
+                    
+                    // Add to select dropdown
+                    const option = document.createElement('option');
+                    option.value = world.id;
+                    option.textContent = world.title;
+                    worldSelect.appendChild(option);
+                });
+            }
+        }
+
+        function selectWorld(worldId, worldTitle) {
+            currentWorldId = worldId;
+            document.getElementById('content-world-select').value = worldId;
+            log(`Selected world: ${worldTitle}`, 'info');
+        }
+
+        async function createPage() {
+            const worldId = document.getElementById('content-world-select').value;
+            const title = document.getElementById('page-title').value;
+            const content = document.getElementById('page-content').value;
+            const summary = document.getElementById('page-summary').value;
+
+            if (!worldId || !title || !content) {
+                alert('Please select a world and fill in page title and content');
+                return;
+            }
+
+            const result = await apiCall(`/worlds/${worldId}/pages/`, 'POST', { 
+                title, 
+                content, 
+                summary 
+            });
+            
+            if (result.ok) {
+                log(`Page created: ${result.data.title}`, 'success');
+                document.getElementById('page-title').value = '';
+                document.getElementById('page-content').value = '';
+                document.getElementById('page-summary').value = '';
+            }
+        }
+
+        async function createCharacter() {
+            const worldId = document.getElementById('content-world-select').value;
+            const full_name = document.getElementById('char-name').value;
+            const title = document.getElementById('char-title').value;
+            const content = document.getElementById('char-description').value;
+
+            if (!worldId || !full_name || !title || !content) {
+                alert('Please select a world and fill in all character fields');
+                return;
+            }
+
+            const result = await apiCall(`/worlds/${worldId}/characters/`, 'POST', { 
+                title,
+                content,
+                full_name,
+                age: '',
+                species: 'Human',
+                occupation: '',
+                location: '',
+                personality_traits: [],
+                physical_description: '',
+                background: '',
+                relationships: {}
+            });
+            
+            if (result.ok) {
+                log(`Character created: ${result.data.full_name}`, 'success');
+                document.getElementById('char-name').value = '';
+                document.getElementById('char-title').value = '';
+                document.getElementById('char-description').value = '';
+            }
+        }
+
+        async function loadTimeline() {
+            const worldId = document.getElementById('content-world-select').value;
+            
+            if (!worldId) {
+                alert('Please select a world first');
+                return;
+            }
+
+            const result = await apiCall(`/worlds/${worldId}/timeline/`);
+            
+            if (result.ok) {
+                const timelineDiv = document.getElementById('timeline-content');
+                timelineDiv.innerHTML = '';
+                
+                if (result.data.timeline && result.data.timeline.length > 0) {
+                    result.data.timeline.forEach(item => {
+                        const itemDiv = document.createElement('div');
+                        itemDiv.className = 'p-4 border rounded bg-gray-50';
+                        itemDiv.innerHTML = `
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <h4 class="font-medium">${item.title}</h4>
+                                    <p class="text-sm text-gray-600">${item.content_type} by ${item.author}</p>
+                                    <p class="text-sm text-gray-500">${new Date(item.created_at).toLocaleString()}</p>
+                                </div>
+                            </div>
+                        `;
+                        timelineDiv.appendChild(itemDiv);
+                    });
+                } else {
+                    timelineDiv.innerHTML = '<p class="text-gray-500">No content in this world yet.</p>';
+                }
+            }
+        }
+
+        // Initialize
+        if (authToken) {
+            showStatus('You are logged in', 'success');
+            loadWorlds();
+        }
+
+        log('API Test Interface loaded. Start by registering or logging in.', 'info');
+    </script>
+</body>
+</html>
