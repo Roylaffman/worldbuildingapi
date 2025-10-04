@@ -12,6 +12,7 @@ import ContentPage from '@/pages/content/ContentPage'
 import ContentListPage from '@/pages/content/ContentListPage'
 import CreateContentPage from '@/pages/content/CreateContentPage'
 import ProfilePage from '@/pages/profile/ProfilePage'
+import TestAuthPage from '@/pages/TestAuthPage'
 import NotFoundPage from '@/pages/NotFoundPage'
 import ProtectedRoute from '@/components/auth/ProtectedRoute'
 
@@ -26,6 +27,7 @@ function App() {
               <Route index element={<HomePage />} />
               <Route path="login" element={<LoginPage />} />
               <Route path="register" element={<RegisterPage />} />
+              <Route path="test-auth" element={<TestAuthPage />} />
               
               {/* Protected routes */}
               <Route path="worlds" element={<ProtectedRoute />}>

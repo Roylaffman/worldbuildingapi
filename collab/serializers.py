@@ -74,7 +74,14 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     def validate_password(self, value):
         """Validate password using Django's password validators."""
         try:
-            validate_password(value, user=self.context.get('request', {}).get('user'))
+            # Create a temporary user instance for validation
+            temp_user = User(
+                username=self.initial_data.get('username', ''),
+                email=self.initial_data.get('email', ''),
+                first_name=self.initial_data.get('first_name', ''),
+                last_name=self.initial_data.get('last_name', '')
+            )
+            validate_password(value, user=temp_user)
         except DjangoValidationError as e:
             raise serializers.ValidationError(e.messages)
         return value

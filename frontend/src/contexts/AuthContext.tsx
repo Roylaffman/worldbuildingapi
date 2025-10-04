@@ -59,7 +59,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const login = async (credentials: LoginCredentials) => {
     try {
-      console.log('AuthContext: Attempting login...')
+      console.log('AuthContext: Attempting login with credentials:', { username: credentials.username })
       const data = await authAPI.login(credentials)
       console.log('AuthContext: Login successful, data:', data)
       
@@ -67,19 +67,32 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       localStorage.setItem('access_token', data.access)
       localStorage.setItem('refresh_token', data.refresh)
       
-      // Set user data
+      // Set user data from login response
       setUser(data.user)
+      setProfile(data.user.profile)
       
-      // Get full profile
-      const profileData = await authAPI.getProfile()
-      setProfile(profileData.profile)
-      
+      console.log('AuthContext: User and profile set, navigating to worlds')
       // Redirect to worlds page
       navigate('/worlds')
     } catch (error: any) {
       console.error('AuthContext: Login error:', error)
+      console.error('AuthContext: Error response:', error.response)
+      
       // Re-throw error to be handled by the component
-      throw new Error(error.response?.data?.error?.message || error.message || 'Login failed')
+      let errorMessage = 'Login failed'
+      
+      if (error.response?.data) {
+        const data = error.response.data
+        errorMessage = data.detail || 
+                      data.message || 
+                      data.error || 
+                      (data.non_field_errors && data.non_field_errors[0]) ||
+                      'Login failed'
+      } else if (error.message) {
+        errorMessage = error.message
+      }
+      
+      throw new Error(errorMessage)
     }
   }
 
@@ -87,18 +100,34 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const response = await authAPI.register(data)
       
-      // Auto-login after registration
-      await login({
-        username: data.username,
-        password: data.password,
-      })
+      // If registration returns tokens, use them directly
+      if (response.tokens) {
+        localStorage.setItem('access_token', response.tokens.access)
+        localStorage.setItem('refresh_token', response.tokens.refresh)
+        setUser(response.user)
+        setProfile(response.user.profile)
+        navigate('/worlds')
+      } else {
+        // Auto-login after registration if no tokens returned
+        await login({
+          username: data.username,
+          password: data.password,
+        })
+      }
     } catch (error: any) {
       // Re-throw error to be handled by the component
-      throw new Error(error.response?.data?.error?.message || 'Registration failed')
+      const errorMessage = error.response?.data?.detail || 
+                          error.response?.data?.message || 
+                          error.response?.data?.error || 
+                          error.message || 
+                          'Registration failed'
+      throw new Error(errorMessage)
     }
   }
 
   const logout = () => {
+    const refreshToken = localStorage.getItem('refresh_token')
+    
     // Clear tokens
     localStorage.removeItem('access_token')
     localStorage.removeItem('refresh_token')
@@ -108,7 +137,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setProfile(null)
     
     // Call logout endpoint (fire and forget)
-    authAPI.logout().catch(() => {
+    authAPI.logout(refreshToken || undefined).catch(() => {
       // Ignore errors on logout
     })
     

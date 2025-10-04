@@ -55,15 +55,16 @@ const LoginPage: React.FC = () => {
     setIsLoading(true)
 
     try {
-      console.log('Attempting login with:', formData)
+      console.log('LoginPage: Attempting login with:', { username: formData.username })
       await login(formData)
+      console.log('LoginPage: Login successful')
       addToast({
         type: 'success',
         title: 'Welcome back!',
         message: 'You have been successfully logged in.',
       })
     } catch (error: any) {
-      console.error('Login error:', error)
+      console.error('LoginPage: Login error:', error)
       addToast({
         type: 'error',
         title: 'Login failed',
