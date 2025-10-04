@@ -19,22 +19,16 @@ const ContentListPage: React.FC = () => {
   // Fetch content data
   const { data: content = [], isLoading, error } = useQuery({
     queryKey: ['world-content', worldId, contentType],
-    queryFn: async () => {
-      console.log('ContentListPage: Fetching content for world', worldId, 'type', contentType)
-      const result = await contentAPI.list(parseInt(worldId!), contentType as ContentType, { ordering: '-created_at' })
-      console.log('ContentListPage: Content fetched:', result)
-      return result
-    },
+    queryFn: () => contentAPI.list(parseInt(worldId!), contentType as ContentType, { ordering: '-created_at' }),
     enabled: !!worldId && !!contentType,
   })
 
-  // Debug logging
+  // Show error if API call fails
   React.useEffect(() => {
-    console.log('ContentListPage: worldId =', worldId, 'contentType =', contentType)
-    console.log('ContentListPage: content =', content)
-    console.log('ContentListPage: isLoading =', isLoading)
-    console.log('ContentListPage: error =', error)
-  }, [worldId, contentType, content, isLoading, error])
+    if (error) {
+      console.error('ContentListPage error:', error)
+    }
+  }, [error])
 
   const getContentIcon = (type: string) => {
     switch (type) {

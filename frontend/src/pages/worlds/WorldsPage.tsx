@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Plus, Globe, Users, Calendar } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
@@ -39,28 +39,7 @@ const WorldsPage: React.FC = () => {
     )
   }
 
-  const mockWorlds = [
-    {
-      id: 1,
-      title: 'Aethermoor',
-      description: 'A mystical realm where magic flows through crystalline formations and ancient forests.',
-      creator: { username: 'worldbuilder1', first_name: 'Alice', last_name: 'Smith' },
-      is_public: true,
-      created_at: '2025-01-15T10:30:00Z',
-      content_counts: { pages: 12, essays: 3, characters: 8, stories: 5, images: 2 },
-      contributor_count: 4,
-    },
-    {
-      id: 2,
-      title: 'Neon Dystopia 2087',
-      description: 'A cyberpunk future where corporations rule and hackers fight for freedom.',
-      creator: { username: 'cyberpunk_fan', first_name: 'Bob', last_name: 'Johnson' },
-      is_public: false,
-      created_at: '2025-01-10T14:20:00Z',
-      content_counts: { pages: 8, essays: 1, characters: 15, stories: 3, images: 7 },
-      contributor_count: 2,
-    },
-  ]
+
 
   const getTotalContent = (counts: any) => {
     return Object.values(counts).reduce((sum: number, count: any) => sum + count, 0)

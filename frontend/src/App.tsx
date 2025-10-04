@@ -2,6 +2,7 @@ import { Routes, Route } from 'react-router-dom'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { ToastProvider } from '@/components/ui/Toaster'
 import Layout from '@/components/layout/Layout'
+import AuthDebug from '@/components/debug/AuthDebug'
 import HomePage from '@/pages/HomePage'
 import LoginPage from '@/pages/auth/LoginPage'
 import RegisterPage from '@/pages/auth/RegisterPage'
@@ -21,6 +22,7 @@ function App() {
     <ToastProvider>
       <AuthProvider>
         <div className="min-h-screen bg-gray-50">
+          <AuthDebug />
           <Routes>
             {/* Public routes */}
             <Route path="/" element={<Layout />}>
