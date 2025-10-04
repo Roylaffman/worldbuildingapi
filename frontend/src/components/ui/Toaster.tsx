@@ -123,9 +123,7 @@ const ToastItem: React.FC<{
   )
 }
 
-export const Toaster: React.FC = () => {
-  return <ToastProvider>{null}</ToastProvider>
-}
+export { ToastProvider }
 
 // Hook for easy toast usage
 export const useToastActions = () => {

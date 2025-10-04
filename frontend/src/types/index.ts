@@ -243,7 +243,7 @@ export interface CreatePageData extends CreateContentData {
 export interface CreateEssayData extends CreateContentData {
   abstract?: string
   topic?: string
-  thesis?: string
+  thesis_statement?: string
 }
 
 export interface CreateCharacterData extends CreateContentData {
@@ -256,7 +256,7 @@ export interface CreateCharacterData extends CreateContentData {
 
 export interface CreateStoryData extends CreateContentData {
   genre?: string
-  story_type?: string
+  story_type?: 'short_story' | 'novella' | 'novel' | 'epic' | 'legend' | 'myth' | 'folklore'
   is_canonical?: boolean
   main_characters?: string[]
 }

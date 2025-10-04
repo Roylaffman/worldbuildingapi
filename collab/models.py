@@ -5,13 +5,83 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
 
 
+class SoftDeleteManager(models.Manager):
+    """Manager that excludes soft-deleted objects by default."""
+    
+    def get_queryset(self):
+        return super().get_queryset().filter(is_deleted=False)
+    
+    def with_deleted(self):
+        """Include soft-deleted objects in queryset."""
+        return super().get_queryset()
+    
+    def deleted_only(self):
+        """Return only soft-deleted objects."""
+        return super().get_queryset().filter(is_deleted=True)
+
+
+class SoftDeleteMixin(models.Model):
+    """
+    Mixin to add soft delete functionality.
+    Objects are marked as deleted but not actually removed from database.
+    """
+    is_deleted = models.BooleanField(default=False, help_text="Soft delete flag")
+    deleted_at = models.DateTimeField(null=True, blank=True, help_text="When this object was soft deleted")
+    deleted_by = models.ForeignKey(
+        User, 
+        null=True, 
+        blank=True, 
+        on_delete=models.SET_NULL,
+        related_name="%(class)s_deleted_set",
+        help_text="User who soft deleted this object"
+    )
+    
+    objects = SoftDeleteManager()
+    all_objects = models.Manager()  # Manager that includes deleted objects
+    
+    class Meta:
+        abstract = True
+    
+    def soft_delete(self, user=None):
+        """Soft delete this object."""
+        from django.utils import timezone
+        self.is_deleted = True
+        self.deleted_at = timezone.now()
+        self.deleted_by = user
+        # Allow soft delete even with immutability
+        super().save(force_update=True)
+    
+    def restore(self):
+        """Restore a soft-deleted object."""
+        self.is_deleted = False
+        self.deleted_at = None
+        self.deleted_by = None
+        super().save(force_update=True)
+
+
 class ImmutableModelMixin:
     """
     Mixin to enforce immutability on model instances after creation.
     Prevents modification and deletion of content to maintain chronological integrity.
+    Allows soft deletion as a compromise.
     """
     def save(self, *args, **kwargs):
+        # Allow soft delete operations and force updates
         if self.pk and not kwargs.get('force_update', False):
+            # Check if this is just a soft delete operation
+            if hasattr(self, 'is_deleted') and hasattr(self, '_state'):
+                # Get the current state from database
+                try:
+                    current = self.__class__.all_objects.get(pk=self.pk)
+                    # Allow if only soft delete fields are changing
+                    if (self.is_deleted != current.is_deleted or 
+                        self.deleted_at != current.deleted_at or
+                        self.deleted_by != current.deleted_by):
+                        super().save(*args, **kwargs)
+                        return
+                except self.__class__.DoesNotExist:
+                    pass
+            
             from .exceptions import ImmutabilityViolationError
             raise ImmutabilityViolationError(
                 message=f"{self.__class__.__name__} content cannot be modified after creation",
@@ -21,6 +91,12 @@ class ImmutableModelMixin:
         super().save(*args, **kwargs)
     
     def delete(self, *args, **kwargs):
+        # If this model supports soft delete, use that instead
+        if hasattr(self, 'soft_delete'):
+            user = kwargs.get('user')
+            self.soft_delete(user=user)
+            return
+            
         from .exceptions import ImmutabilityViolationError
         raise ImmutabilityViolationError(
             message=f"{self.__class__.__name__} content cannot be deleted",
@@ -202,7 +278,7 @@ class World(models.Model):
         verbose_name_plural = "Worlds"
 
 
-class ContentBase(ImmutableModelMixin, models.Model):
+class ContentBase(SoftDeleteMixin, ImmutableModelMixin, models.Model):
     """
     Abstract base model for all content types in the worldbuilding system.
     Provides common fields and immutability enforcement.

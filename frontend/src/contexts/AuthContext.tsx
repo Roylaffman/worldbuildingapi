@@ -59,7 +59,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const login = async (credentials: LoginCredentials) => {
     try {
+      console.log('AuthContext: Attempting login...')
       const data = await authAPI.login(credentials)
+      console.log('AuthContext: Login successful, data:', data)
       
       // Store tokens
       localStorage.setItem('access_token', data.access)
@@ -75,8 +77,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Redirect to worlds page
       navigate('/worlds')
     } catch (error: any) {
+      console.error('AuthContext: Login error:', error)
       // Re-throw error to be handled by the component
-      throw new Error(error.response?.data?.error?.message || 'Login failed')
+      throw new Error(error.response?.data?.error?.message || error.message || 'Login failed')
     }
   }
 
