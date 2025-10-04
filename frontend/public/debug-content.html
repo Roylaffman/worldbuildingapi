@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Content List Debug</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .result { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        button { margin: 5px; padding: 10px 15px; cursor: pointer; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Content List Debug Tool</h1>
+    
+    <div>
+        <button onclick="checkAuth()">Check Auth</button>
+        <button onclick="testLogin()">Login</button>
+        <button onclick="testContentAPI()">Test Content API</button>
+        <button onclick="clearResults()">Clear Results</button>
+    </div>
+    
+    <div id="results"></div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:8000/api/v1';
+        
+        function addResult(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.innerHTML = message;
+            results.appendChild(div);
+        }
+        
+        function checkAuth() {
+            addResult('<h3>Checking Authentication...</h3>');
+            
+            const accessToken = localStorage.getItem('access_token');
+            const refreshToken = localStorage.getItem('refresh_token');
+            
+            addResult(`Access Token: ${accessToken ? '✅ Present' : '❌ Missing'}`, accessToken ? 'success' : 'error');
+            addResult(`Refresh Token: ${refreshToken ? '✅ Present' : '❌ Missing'}`, refreshToken ? 'success' : 'error');
+            
+            if (accessToken) {
+                try {
+                    const payload = JSON.parse(atob(accessToken.split('.')[1]));
+                    const exp = new Date(payload.exp * 1000);
+                    const now = new Date();
+                    const isExpired = exp < now;
+                    
+                    addResult(`Token Expiry: ${exp.toLocaleString()}`, isExpired ? 'error' : 'success');
+                    addResult(`Token Status: ${isExpired ? '❌ Expired' : '✅ Valid'}`, isExpired ? 'error' : 'success');
+                    addResult(`User: ${payload.username} (${payload.email})`, 'info');
+                } catch (e) {
+                    addResult('❌ Invalid token format', 'error');
+                }
+            }
+        }
+        
+        async function testLogin() {
+            addResult('<h3>Testing Login...</h3>');
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/login/`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: 'admin',
+                        password: 'admin123'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    localStorage.setItem('access_token', data.access);
+                    localStorage.setItem('refresh_token', data.refresh);
+                    addResult('✅ Login successful! Tokens stored.', 'success');
+                    addResult(`User: ${data.user.username} (${data.user.email})`, 'info');
+                } else {
+                    addResult(`❌ Login failed: ${data.detail || 'Unknown error'}`, 'error');
+                }
+            } catch (error) {
+                addResult(`❌ Login error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testContentAPI() {
+            addResult('<h3>Testing Content API...</h3>');
+            
+            const token = localStorage.getItem('access_token');
+            if (!token) {
+                addResult('❌ No access token found. Please login first.', 'error');
+                return;
+            }
+            
+            const contentTypes = ['essays', 'characters', 'pages', 'stories', 'images'];
+            
+            for (const contentType of contentTypes) {
+                try {
+                    addResult(`<h4>Testing ${contentType} for world 9...</h4>`);
+                    
+                    const response = await fetch(`${API_BASE_URL}/worlds/9/${contentType}/`, {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        addResult(`✅ ${contentType}: ${data.count || 0} items`, data.count > 0 ? 'success' : 'info');
+                        
+                        if (data.results && data.results.length > 0) {
+                            const item = data.results[0];
+                            addResult(`   First item: "${item.title}" by ${item.author.first_name || item.author.username}`, 'info');
+                            addResult(`   Content preview: "${item.content.substring(0, 100)}..."`, 'info');
+                            
+                            // Show content-specific fields
+                            if (contentType === 'essays' && item.word_count) {
+                                addResult(`   Word count: ${item.word_count}`, 'info');
+                            }
+                            if (contentType === 'characters' && item.full_name) {
+                                addResult(`   Full name: ${item.full_name}`, 'info');
+                            }
+                        }
+                    } else {
+                        addResult(`❌ ${contentType} failed: ${data.detail || 'Unknown error'}`, 'error');
+                    }
+                } catch (error) {
+                    addResult(`❌ ${contentType} error: ${error.message}`, 'error');
+                }
+            }
+        }
+        
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+        
+        // Auto-check auth on load
+        window.onload = function() {
+            checkAuth();
+        };
+    </script>
+</body>
+</html>

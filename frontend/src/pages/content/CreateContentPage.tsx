@@ -12,6 +12,7 @@ import CreatePageForm from './forms/CreatePageForm'
 import CreateCharacterForm from './forms/CreateCharacterForm'
 import CreateStoryForm from './forms/CreateStoryForm'
 import CreateEssayForm from './forms/CreateEssayForm'
+import CreateImageForm from './forms/CreateImageForm'
 
 const CreateContentPage: React.FC = () => {
   const { worldId, contentType } = useParams<{ worldId: string; contentType: string }>()
@@ -95,20 +96,7 @@ const CreateContentPage: React.FC = () => {
       case 'essay':
         return <CreateEssayForm {...commonProps} />
       case 'image':
-        return (
-          <div className="text-center py-8 text-gray-500">
-            <ImageIcon className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-            <p className="text-lg font-medium mb-2">Image Upload Coming Soon!</p>
-            <p className="text-sm">Image creation functionality will be available in a future update.</p>
-            <Button
-              variant="outline"
-              onClick={() => navigate(`/worlds/${worldId}`)}
-              className="mt-4"
-            >
-              Back to World
-            </Button>
-          </div>
-        )
+        return <CreateImageForm {...commonProps} />
       default:
         return (
           <div className="text-center py-8 text-gray-500">
@@ -162,47 +150,54 @@ const CreateContentPage: React.FC = () => {
       </div>
 
       {/* Tips */}
-      {contentType !== 'image' && (
-        <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <h3 className="text-sm font-medium text-blue-900 mb-2">
-            Tips for creating great {contentType}s:
-          </h3>
-          <ul className="text-sm text-blue-800 space-y-1">
-            {contentType === 'page' && (
-              <>
-                <li>• Use a clear, descriptive title</li>
-                <li>• Include key information in the summary</li>
-                <li>• Write detailed content to help collaborators understand</li>
-                <li>• Add relevant tags to help with discovery</li>
-              </>
-            )}
-            {contentType === 'character' && (
-              <>
-                <li>• Give your character a memorable full name</li>
-                <li>• Define their species and occupation clearly</li>
-                <li>• List personality traits that make them unique</li>
-                <li>• Describe relationships with other characters</li>
-              </>
-            )}
-            {contentType === 'story' && (
-              <>
-                <li>• Choose an engaging title</li>
-                <li>• Specify the genre and story type</li>
-                <li>• List the main characters involved</li>
-                <li>• Write a compelling narrative</li>
-              </>
-            )}
-            {contentType === 'essay' && (
-              <>
-                <li>• Write a clear, informative title</li>
-                <li>• Include an abstract summarizing your main points</li>
-                <li>• State your thesis clearly</li>
-                <li>• Organize your content logically</li>
-              </>
-            )}
-          </ul>
-        </div>
-      )}
+      <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <h3 className="text-sm font-medium text-blue-900 mb-2">
+          Tips for creating great {contentType}s:
+        </h3>
+        <ul className="text-sm text-blue-800 space-y-1">
+          {contentType === 'page' && (
+            <>
+              <li>• Use a clear, descriptive title</li>
+              <li>• Include key information in the summary</li>
+              <li>• Write detailed content to help collaborators understand</li>
+              <li>• Add relevant tags to help with discovery</li>
+            </>
+          )}
+          {contentType === 'character' && (
+            <>
+              <li>• Give your character a memorable full name</li>
+              <li>• Define their species and occupation clearly</li>
+              <li>• List personality traits that make them unique</li>
+              <li>• Describe relationships with other characters</li>
+            </>
+          )}
+          {contentType === 'story' && (
+            <>
+              <li>• Choose an engaging title</li>
+              <li>• Specify the genre and story type</li>
+              <li>• List the main characters involved</li>
+              <li>• Write a compelling narrative</li>
+            </>
+          )}
+          {contentType === 'essay' && (
+            <>
+              <li>• Write a clear, informative title</li>
+              <li>• Include an abstract summarizing your main points</li>
+              <li>• State your thesis clearly</li>
+              <li>• Organize your content logically</li>
+            </>
+          )}
+          {contentType === 'image' && (
+            <>
+              <li>• Use descriptive titles for your storyboards and concept art</li>
+              <li>• Write detailed alt text for accessibility</li>
+              <li>• Describe how the image relates to your world or story</li>
+              <li>• Use tags like "storyboard", "character-design", "concept-art"</li>
+              <li>• Keep file sizes reasonable (under 10MB)</li>
+            </>
+          )}
+        </ul>
+      </div>
     </div>
   )
 }
