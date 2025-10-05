@@ -13,6 +13,8 @@ import ContentListPage from '@/pages/content/ContentListPage'
 import CreateContentPage from '@/pages/content/CreateContentPage'
 import ProfilePage from '@/pages/profile/ProfilePage'
 import TestAuthPage from '@/pages/TestAuthPage'
+import TagsPage from '@/pages/tags/TagsPage'
+import TagPage from '@/pages/tags/TagPage'
 import NotFoundPage from '@/pages/NotFoundPage'
 import ProtectedRoute from '@/components/auth/ProtectedRoute'
 
@@ -37,6 +39,8 @@ function App() {
                 <Route path=":worldId/:contentType" element={<ContentListPage />} />
                 <Route path=":worldId/content/:contentType/:contentId" element={<ContentPage />} />
                 <Route path=":worldId/create/:contentType" element={<CreateContentPage />} />
+                <Route path=":worldId/tags" element={<TagsPage />} />
+                <Route path=":worldId/tags/:tagName" element={<TagPage />} />
               </Route>
               
               <Route path="profile" element={<ProtectedRoute />}>

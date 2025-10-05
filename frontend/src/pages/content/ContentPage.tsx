@@ -1,9 +1,12 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { ArrowLeft, Calendar, User, Tag, Link as LinkIcon, FileText, BookOpen, Scroll, Image as ImageIcon } from 'lucide-react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { contentAPI, worldsAPI } from '@/lib/api'
+import { useToast } from '@/components/ui/Toaster'
 import Button from '@/components/ui/Button'
+import TagManager from '@/components/content/TagManager'
+import ContentLinker from '@/components/content/ContentLinker'
 import type { ContentType } from '@/types'
 
 const ContentPage: React.FC = () => {
@@ -12,6 +15,10 @@ const ContentPage: React.FC = () => {
     contentType: string
     contentId: string 
   }>()
+  const { addToast } = useToast()
+  const queryClient = useQueryClient()
+  const [isManagingTags, setIsManagingTags] = useState(false)
+  const [isManagingLinks, setIsManagingLinks] = useState(false)
 
   // Fetch world data
   const { data: world } = useQuery({
@@ -30,6 +37,66 @@ const ContentPage: React.FC = () => {
     ),
     enabled: !!worldId && !!contentType && !!contentId,
   })
+
+  // Add tag mutation
+  const addTagMutation = useMutation({
+    mutationFn: (tagName: string) => 
+      contentAPI.addTags(
+        parseInt(worldId!), 
+        contentType as ContentType, 
+        parseInt(contentId!), 
+        [tagName]
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['content', worldId, contentType, contentId] })
+      addToast({
+        type: 'success',
+        title: 'Tag added',
+        message: 'Tag has been added to this content.',
+      })
+    },
+    onError: (error: any) => {
+      addToast({
+        type: 'error',
+        title: 'Failed to add tag',
+        message: error.message || 'Could not add tag. Please try again.',
+      })
+    },
+  })
+
+  // Add link mutation
+  const addLinkMutation = useMutation({
+    mutationFn: ({ targetContentType, targetContentId }: { targetContentType: ContentType, targetContentId: number }) =>
+      contentAPI.addLinks(
+        parseInt(worldId!),
+        contentType as ContentType,
+        parseInt(contentId!),
+        [{ content_type: targetContentType, content_id: targetContentId }]
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['content', worldId, contentType, contentId] })
+      addToast({
+        type: 'success',
+        title: 'Content linked',
+        message: 'Content has been linked successfully.',
+      })
+    },
+    onError: (error: any) => {
+      addToast({
+        type: 'error',
+        title: 'Failed to link content',
+        message: error.message || 'Could not link content. Please try again.',
+      })
+    },
+  })
+
+  const handleAddTag = (tagName: string) => {
+    addTagMutation.mutate(tagName)
+  }
+
+  const handleAddLink = (targetContentType: ContentType, targetContentId: number) => {
+    addLinkMutation.mutate({ targetContentType, targetContentId })
+  }
 
   const getContentIcon = (type: string) => {
     switch (type) {
@@ -258,57 +325,104 @@ const ContentPage: React.FC = () => {
       )}
 
       {/* Tags */}
-      {content.tags && content.tags.length > 0 && (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold text-gray-900 flex items-center">
             <Tag className="h-5 w-5 mr-2" />
             Tags
           </h2>
-          <div className="flex flex-wrap gap-2">
-            {content.tags.map((tag) => (
-              <Link
-                key={tag.id}
-                to={`/worlds/${worldId}/tags/${tag.name}`}
-                className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800 hover:bg-gray-200 transition-colors"
-              >
-                {tag.name}
-              </Link>
-            ))}
-          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsManagingTags(!isManagingTags)}
+          >
+            {isManagingTags ? 'Done' : 'Manage Tags'}
+          </Button>
         </div>
-      )}
+        
+        {isManagingTags ? (
+          <TagManager
+            worldId={parseInt(worldId!)}
+            existingTags={content.tags || []}
+            onAddTag={handleAddTag}
+            maxTags={10}
+          />
+        ) : (
+          <div>
+            {content.tags && content.tags.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {content.tags.map((tag) => (
+                  <Link
+                    key={tag.id}
+                    to={`/worlds/${worldId}/tags/${tag.name}`}
+                    className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800 hover:bg-gray-200 transition-colors"
+                  >
+                    {tag.name}
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500 text-sm">No tags yet. Click "Manage Tags" to add some.</p>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Linked Content */}
-      {content.linked_content && content.linked_content.length > 0 && (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold text-gray-900 flex items-center">
             <LinkIcon className="h-5 w-5 mr-2" />
             Linked Content
           </h2>
-          <div className="space-y-3">
-            {content.linked_content.map((linkedItem) => {
-              const LinkedIcon = getContentIcon(linkedItem.type)
-              return (
-                <Link
-                  key={linkedItem.id}
-                  to={`/worlds/${worldId}/content/${linkedItem.type}/${linkedItem.id}`}
-                  className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  <div className="p-2 bg-primary-100 rounded-lg">
-                    <LinkedIcon className="h-4 w-4 text-primary-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-medium text-gray-900">{linkedItem.title}</h3>
-                    <p className="text-sm text-gray-600">
-                      {getContentTypeLabel(linkedItem.type)} • by {linkedItem.author.first_name || linkedItem.author.username}
-                    </p>
-                  </div>
-                </Link>
-              )
-            })}
-          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsManagingLinks(!isManagingLinks)}
+          >
+            {isManagingLinks ? 'Done' : 'Manage Links'}
+          </Button>
         </div>
-      )}
+        
+        {isManagingLinks ? (
+          <ContentLinker
+            worldId={parseInt(worldId!)}
+            currentContentId={parseInt(contentId!)}
+            currentContentType={contentType as ContentType}
+            existingLinks={content.linked_content || []}
+            onAddLink={handleAddLink}
+          />
+        ) : (
+          <div>
+            {content.linked_content && content.linked_content.length > 0 ? (
+              <div className="space-y-3">
+                {content.linked_content.map((linkedItem) => {
+                  const LinkedIcon = getContentIcon(linkedItem.type)
+                  return (
+                    <Link
+                      key={linkedItem.id}
+                      to={`/worlds/${worldId}/content/${linkedItem.type}/${linkedItem.id}`}
+                      className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                      <div className="p-2 bg-primary-100 rounded-lg">
+                        <LinkedIcon className="h-4 w-4 text-primary-600" />
+                      </div>
+                      <div>
+                        <h3 className="font-medium text-gray-900">{linkedItem.title}</h3>
+                        <p className="text-sm text-gray-600">
+                          {getContentTypeLabel(linkedItem.type)} • by {linkedItem.author.first_name || linkedItem.author.username}
+                        </p>
+                      </div>
+                    </Link>
+                  )
+                })}
+              </div>
+            ) : (
+              <p className="text-gray-500 text-sm">No linked content yet. Click "Manage Links" to connect related content.</p>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Attribution */}
       {content.attribution && (
