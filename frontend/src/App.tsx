@@ -15,6 +15,7 @@ import ProfilePage from '@/pages/profile/ProfilePage'
 import TestAuthPage from '@/pages/TestAuthPage'
 import TagsPage from '@/pages/tags/TagsPage'
 import TagPage from '@/pages/tags/TagPage'
+import DocsPage from '@/pages/docs/DocsPage'
 import NotFoundPage from '@/pages/NotFoundPage'
 import ProtectedRoute from '@/components/auth/ProtectedRoute'
 
@@ -30,6 +31,8 @@ function App() {
               <Route path="login" element={<LoginPage />} />
               <Route path="register" element={<RegisterPage />} />
               <Route path="test-auth" element={<TestAuthPage />} />
+              <Route path="docs" element={<DocsPage />} />
+              <Route path="docs/:section" element={<DocsPage />} />
               
               {/* Protected routes */}
               <Route path="worlds" element={<ProtectedRoute />}>

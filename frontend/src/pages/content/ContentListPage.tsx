@@ -46,7 +46,19 @@ const ContentListPage: React.FC = () => {
   }
 
   const Icon = getContentIcon(contentType || '')
-  const singularType = contentType?.slice(0, -1) // Remove 's' from plural
+  // Convert plural content type to singular
+  const getSingularType = (type: string) => {
+    switch (type) {
+      case 'stories': return 'story'
+      case 'pages': return 'page'
+      case 'characters': return 'character'
+      case 'essays': return 'essay'
+      case 'images': return 'image'
+      default: return type?.slice(0, -1) // fallback: remove 's'
+    }
+  }
+  
+  const singularType = getSingularType(contentType || '')
 
   if (isLoading) {
     return (

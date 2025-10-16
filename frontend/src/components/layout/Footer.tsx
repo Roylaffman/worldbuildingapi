@@ -46,9 +46,9 @@ const Footer: React.FC = () => {
                 </Link>
               </li>
               <li>
-                <a href="/docs/api_documentation.md" className="text-sm text-gray-600 hover:text-primary-600 transition-colors">
+                <Link to="/docs/api-reference" className="text-sm text-gray-600 hover:text-primary-600 transition-colors">
                   API Documentation
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
@@ -58,9 +58,9 @@ const Footer: React.FC = () => {
             <h3 className="text-sm font-semibold text-gray-900 mb-4">Support</h3>
             <ul className="space-y-2">
               <li>
-                <a href="/docs/README.md" className="text-sm text-gray-600 hover:text-primary-600 transition-colors">
+                <Link to="/docs" className="text-sm text-gray-600 hover:text-primary-600 transition-colors">
                   Documentation
-                </a>
+                </Link>
               </li>
               <li>
                 <a href="https://github.com/yourusername/collaborative-worldbuilding/issues" className="text-sm text-gray-600 hover:text-primary-600 transition-colors">

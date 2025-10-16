@@ -180,7 +180,7 @@ const HomePage: React.FC = () => {
                   <Link to="/register">Create Account</Link>
                 </Button>
                 <Button variant="outline" size="lg" className="border-white text-white hover:bg-white hover:text-primary-600" asChild>
-                  <Link to="/docs/api_documentation.md">View Documentation</Link>
+                  <Link to="/docs">View Documentation</Link>
                 </Button>
               </div>
             </div>

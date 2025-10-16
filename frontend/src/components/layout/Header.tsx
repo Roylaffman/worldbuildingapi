@@ -29,22 +29,30 @@ const Header: React.FC = () => {
             </Link>
 
             {/* Desktop navigation */}
-            {isAuthenticated && (
-              <nav className="hidden md:ml-8 md:flex md:space-x-8">
-                <Link
-                  to="/worlds"
-                  className="text-gray-700 hover:text-primary-600 px-3 py-2 text-sm font-medium transition-colors"
-                >
-                  My Worlds
-                </Link>
-                <Link
-                  to="/worlds/create"
-                  className="text-gray-700 hover:text-primary-600 px-3 py-2 text-sm font-medium transition-colors"
-                >
-                  Create World
-                </Link>
-              </nav>
-            )}
+            <nav className="hidden md:ml-8 md:flex md:space-x-8">
+              {isAuthenticated && (
+                <>
+                  <Link
+                    to="/worlds"
+                    className="text-gray-700 hover:text-primary-600 px-3 py-2 text-sm font-medium transition-colors"
+                  >
+                    My Worlds
+                  </Link>
+                  <Link
+                    to="/worlds/create"
+                    className="text-gray-700 hover:text-primary-600 px-3 py-2 text-sm font-medium transition-colors"
+                  >
+                    Create World
+                  </Link>
+                </>
+              )}
+              <Link
+                to="/docs"
+                className="text-gray-700 hover:text-primary-600 px-3 py-2 text-sm font-medium transition-colors"
+              >
+                Documentation
+              </Link>
+            </nav>
           </div>
 
           {/* Right side */}
@@ -138,29 +146,40 @@ const Header: React.FC = () => {
         {/* Mobile menu */}
         {isMobileMenuOpen && (
           <div className="md:hidden border-t border-gray-200 py-4">
-            {isAuthenticated ? (
-              <div className="space-y-2">
-                <Link
-                  to="/worlds"
-                  className="block px-3 py-2 text-gray-700 hover:text-primary-600 text-sm font-medium"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  My Worlds
-                </Link>
-                <Link
-                  to="/worlds/create"
-                  className="block px-3 py-2 text-gray-700 hover:text-primary-600 text-sm font-medium"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  Create World
-                </Link>
-                <Link
-                  to="/profile"
-                  className="block px-3 py-2 text-gray-700 hover:text-primary-600 text-sm font-medium"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  Profile
-                </Link>
+            <div className="space-y-2">
+              {isAuthenticated && (
+                <>
+                  <Link
+                    to="/worlds"
+                    className="block px-3 py-2 text-gray-700 hover:text-primary-600 text-sm font-medium"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    My Worlds
+                  </Link>
+                  <Link
+                    to="/worlds/create"
+                    className="block px-3 py-2 text-gray-700 hover:text-primary-600 text-sm font-medium"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Create World
+                  </Link>
+                  <Link
+                    to="/profile"
+                    className="block px-3 py-2 text-gray-700 hover:text-primary-600 text-sm font-medium"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Profile
+                  </Link>
+                </>
+              )}
+              <Link
+                to="/docs"
+                className="block px-3 py-2 text-gray-700 hover:text-primary-600 text-sm font-medium"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Documentation
+              </Link>
+              {isAuthenticated ? (
                 <button
                   onClick={() => {
                     handleLogout()
@@ -170,25 +189,25 @@ const Header: React.FC = () => {
                 >
                   Sign out
                 </button>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <Link
-                  to="/login"
-                  className="block px-3 py-2 text-gray-700 hover:text-primary-600 text-sm font-medium"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  Sign in
-                </Link>
-                <Link
-                  to="/register"
-                  className="block px-3 py-2 text-gray-700 hover:text-primary-600 text-sm font-medium"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  Get started
-                </Link>
-              </div>
-            )}
+              ) : (
+                <>
+                  <Link
+                    to="/login"
+                    className="block px-3 py-2 text-gray-700 hover:text-primary-600 text-sm font-medium"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Sign in
+                  </Link>
+                  <Link
+                    to="/register"
+                    className="block px-3 py-2 text-gray-700 hover:text-primary-600 text-sm font-medium"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Get started
+                  </Link>
+                </>
+              )}
+            </div>
           </div>
         )}
       </div>

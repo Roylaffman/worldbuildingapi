@@ -415,6 +415,54 @@ class Command(BaseCommand):
                 for item in items:
                     self.stdout.write(f'   ID: {item.id} | "{item.title}" | {item.author.username} | World: {item.world.title}')
 
+    def _show_users(self, options):
+        """Show user information."""
+        from django.contrib.auth.models import User
+        from collab.models import UserProfile
+        
+        self.stdout.write(self.style.SUCCESS('👥 Users'))
+        self.stdout.write('=' * 40)
+        
+        users = User.objects.all().order_by('-date_joined')
+        limit = options['limit']
+        
+        self.stdout.write(f'Total users: {users.count()}')
+        self.stdout.write(f'Showing: {min(limit, users.count())}')
+        self.stdout.write('-' * 40)
+        
+        for user in users[:limit]:
+            joined = user.date_joined.strftime('%Y-%m-%d %H:%M')
+            last_login = user.last_login.strftime('%Y-%m-%d %H:%M') if user.last_login else 'Never'
+            
+            # Get user stats
+            worlds_created = World.objects.filter(creator=user).count()
+            content_created = 0
+            for model in [Page, Character, Story, Essay, Image]:
+                content_created += model.objects.filter(author=user).count()
+            
+            # Get profile info
+            profile_info = ""
+            try:
+                profile = UserProfile.objects.get(user=user)
+                if user.first_name or user.last_name:
+                    profile_info = f" ({user.first_name} {user.last_name})".strip()
+            except UserProfile.DoesNotExist:
+                if user.first_name or user.last_name:
+                    profile_info = f" ({user.first_name} {user.last_name})".strip()
+            
+            status = "Active" if user.is_active else "Inactive"
+            if user.is_superuser:
+                status += " (Admin)"
+            
+            self.stdout.write(
+                f'ID: {user.id:3d} | {user.username}{profile_info} | '
+                f'{status} | Joined: {joined} | Last: {last_login}'
+            )
+            self.stdout.write(
+                f'      Worlds: {worlds_created} | Content: {content_created} | Email: {user.email or "None"}'
+            )
+            self.stdout.write('')
+
     def _show_recent(self, options):
         """Show recent activity."""
         days = 7  # Last 7 days
