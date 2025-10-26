@@ -1,36 +1,42 @@
-# Frontend Dockerfile
-# Build stage
-FROM node:18-alpine as build
+# Frontend Dockerfile — Cloud Run target (nginx serving React build + /api proxy)
 
+# ---- Build stage ----
+FROM node:18-alpine AS build
 WORKDIR /app
 
-# Copy package files
+# Copy lockfiles first for layer caching.
 COPY package*.json ./
+# We need devDependencies (vite, typescript, tailwind) at build time, so do
+# NOT pass --omit=dev here. The previous --only=production was a bug.
+RUN npm ci
 
-# Install dependencies
-RUN npm ci --only=production
+# Copy source and build. VITE_API_BASE_URL is embedded into the bundle at
+# build time; default to "/api/v1" so the prod nginx proxy handles routing.
+ARG VITE_API_BASE_URL=/api/v1
+ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
 
-# Copy source code
 COPY . .
-
-# Build the app
 RUN npm run build
 
-# Production stage
+# ---- Runtime stage ----
 FROM nginx:alpine
 
-# Copy built app from build stage
+# envsubst comes from gettext.
+RUN apk add --no-cache gettext curl
+
+# Static React build → nginx web root.
 COPY --from=build /app/dist /usr/share/nginx/html
 
-# Copy nginx configuration
-COPY nginx.conf /etc/nginx/nginx.conf
+# Templated nginx config + entrypoint.
+COPY nginx.conf.template /etc/nginx/nginx.conf.template
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
-# Expose port 80
-EXPOSE 80
+# Cloud Run will set $PORT; default for local runs.
+ENV PORT=8080
+EXPOSE 8080
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost/ || exit 1
+HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
+    CMD curl -fsS "http://localhost:${PORT}/healthz" || exit 1
 
-# Start nginx
-CMD ["nginx", "-g", "daemon off;"]
+ENTRYPOINT ["/entrypoint.sh"]

@@ -6,6 +6,7 @@ from django.test import TestCase
 from django.contrib.auth.models import User
 from rest_framework.test import APIClient
 from rest_framework import status
+from unittest.mock import patch
 from .models import World, Page, Essay, Character, Story, Image
 from .exceptions import ImmutabilityViolationError
 
@@ -145,13 +146,13 @@ class ImmutabilityEnforcementTest(TestCase):
         # Create character
         data = {
             'title': 'Test Character',
-            'content': 'Character description',
+            'content': 'Character description content',
             'full_name': 'John Doe',
             'species': 'Human',
             'personality_traits': ['brave'],
             'relationships': {}
         }
-        response = self.client.post(f'/api/worlds/{self.world.id}/characters/', data)
+        response = self.client.post(f'/api/worlds/{self.world.id}/characters/', data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         character_id = response.data['id']
         
@@ -192,11 +193,11 @@ class ImmutabilityEnforcementTest(TestCase):
         # Create story
         data = {
             'title': 'Test Story',
-            'content': 'Original story content',
+            'content': 'Original story content here',
             'genre': 'Fantasy',
             'main_characters': ['Hero']
         }
-        response = self.client.post(f'/api/worlds/{self.world.id}/stories/', data)
+        response = self.client.post(f'/api/worlds/{self.world.id}/stories/', data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         story_id = response.data['id']
         
@@ -223,14 +224,15 @@ class ImmutabilityEnforcementTest(TestCase):
             world=self.world,
             alt_text='Test alt text'
         )
-        # Skip file validation for this test
-        image.save()
-        
-        # Try to modify the image
-        image.alt_text = 'Modified alt text'
-        with self.assertRaises(ImmutabilityViolationError):
+        # Skip file validation for this test by patching full_clean throughout
+        with patch.object(Image, 'full_clean', return_value=None):
             image.save()
-        
+
+            # Try to modify the image
+            image.alt_text = 'Modified alt text'
+            with self.assertRaises(ImmutabilityViolationError):
+                image.save()
+
         # Try to delete the image
         with self.assertRaises(ImmutabilityViolationError):
             image.delete()
@@ -377,7 +379,7 @@ class ImmutabilityEnforcementTest(TestCase):
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
         
         # Error message should be informative
-        self.assertIn('immutable', str(response.data).lower())
+        self.assertIn('immutable', response.content.decode().lower())
     
     def test_immutability_across_different_users(self):
         """Test that immutability applies even to the original author."""
@@ -413,7 +415,7 @@ class ImmutabilityEnforcementTest(TestCase):
         for i in range(3):
             page = Page.objects.create(
                 title=f'Test Page {i}',
-                content=f'Content {i}',
+                content=f'Page content entry number {i}',
                 author=self.user,
                 world=self.world
             )

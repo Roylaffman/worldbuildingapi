@@ -401,8 +401,14 @@ class TagSerializer(serializers.ModelSerializer):
         """Validate and normalize tag name."""
         if not value.strip():
             raise serializers.ValidationError("Tag name cannot be empty.")
-        
+
         normalized_name = value.strip().lower()
+
+        # Reject tag names with spaces (tags must be single words or hyphen-separated)
+        if ' ' in normalized_name:
+            raise serializers.ValidationError(
+                "Tag names cannot contain spaces. Use hyphens to separate words (e.g., 'my-tag')."
+            )
         
         # Check for uniqueness within the world (if world is provided)
         world = self.context.get('world')
@@ -571,6 +577,20 @@ class ContentBaseSerializer(serializers.ModelSerializer):
             })
         
         return value.strip()
+
+    def validate(self, attrs):
+        """Check title uniqueness within the world on creation."""
+        view = self.context.get('view')
+        if view and self.instance is None:
+            world_pk = view.kwargs.get('world_pk')
+            title = attrs.get('title', '')
+            if world_pk and title:
+                model_class = self.Meta.model
+                if model_class.objects.filter(title=title, world_id=world_pk).exists():
+                    raise serializers.ValidationError({
+                        'title': f'Content with this title already exists in this world.'
+                    })
+        return attrs
 
     def validate_content(self, value):
         """Validate content body."""

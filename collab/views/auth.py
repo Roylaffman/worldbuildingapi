@@ -222,15 +222,13 @@ def user_info(request):
         profile = UserProfile.objects.create(user=request.user)
     
     return Response({
-        'user': {
-            'id': request.user.id,
-            'username': request.user.username,
-            'email': request.user.email,
-            'first_name': request.user.first_name,
-            'last_name': request.user.last_name,
-            'date_joined': request.user.date_joined,
-            'profile': UserProfileSerializer(profile).data
-        }
+        'id': request.user.id,
+        'username': request.user.username,
+        'email': request.user.email,
+        'first_name': request.user.first_name,
+        'last_name': request.user.last_name,
+        'date_joined': request.user.date_joined,
+        'profile': UserProfileSerializer(profile).data,
     })
 
 
@@ -245,14 +243,17 @@ def verify_token(request):
     from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
     
     try:
-        # Get token from Authorization header
-        auth_header = request.META.get('HTTP_AUTHORIZATION')
-        if not auth_header or not auth_header.startswith('Bearer '):
+        # Accept token from Authorization header OR request body.
+        auth_header = request.META.get('HTTP_AUTHORIZATION', '')
+        if auth_header.startswith('Bearer '):
+            token = auth_header.split(' ', 1)[1]
+        elif request.data.get('token'):
+            token = request.data['token']
+        else:
             return Response({
-                'error': 'Authorization header missing or invalid'
+                'error': 'Token required: provide as Bearer header or {"token": "..."} body'
             }, status=status.HTTP_401_UNAUTHORIZED)
-        
-        token = auth_header.split(' ')[1]
+
         
         # Validate token
         jwt_auth = JWTAuthentication()

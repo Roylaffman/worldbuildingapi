@@ -1,40 +1,42 @@
-# Backend Dockerfile
+# Backend Dockerfile — Cloud Run target
 FROM python:3.11-slim
 
-# Set environment variables
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
 
-# Set work directory
 WORKDIR /app
 
-# Install system dependencies
+# System deps:
+#   libpq-dev, build-essential — to compile psycopg2 wheel for psycopg2-binary fallback
+#   curl                       — for HEALTHCHECK
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-        postgresql-client \
-        build-essential \
         libpq-dev \
+        build-essential \
+        curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies
+# Python deps first for better layer caching.
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install -r requirements.txt
 
-# Copy project
 COPY . .
+RUN chmod +x /app/entrypoint.sh
 
-# Create staticfiles directory
-RUN mkdir -p staticfiles
+# Pre-collect static files so the container starts fast on Cloud Run.
+# DJANGO_ENV=production toggles WhiteNoise hashed-manifest storage.
+ENV DJANGO_ENV=production \
+    SECRET_KEY=build-time-only-not-for-runtime \
+    USE_POSTGRESQL=False
+RUN python manage.py collectstatic --noinput
 
-# Collect static files
-RUN python manage.py collectstatic --noinput --settings=worldbuilding.settings.production || true
+# Cloud Run will set $PORT; default for local runs.
+ENV PORT=8080
+EXPOSE 8080
 
-# Expose port
-EXPOSE 8000
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+    CMD curl -fsS "http://localhost:${PORT}/api/v1/health/" || exit 1
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8000/api/health/ || exit 1
-
-# Run gunicorn
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "3", "worldbuilding.wsgi:application"]
+ENTRYPOINT ["/app/entrypoint.sh"]

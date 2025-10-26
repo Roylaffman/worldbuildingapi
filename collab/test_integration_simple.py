@@ -223,8 +223,10 @@ class TaggingLinkingEndToEndTest(TestCase):
         response = self.client.get(f'/api/worlds/{self.world.id}/tags/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         
-        tags = response.data
-        tag_names = [tag['name'] for tag in tags]
+        tags_response = response.data
+        if isinstance(tags_response, dict) and 'results' in tags_response:
+            tags_response = tags_response['results']
+        tag_names = [tag['name'] for tag in tags_response]
         self.assertIn('magic', tag_names)
         
         return True

@@ -322,14 +322,26 @@ class ContentLinkViewSet(viewsets.ModelViewSet):
                 'message': 'Please provide from_content_type, from_object_id, to_content_type, and to_object_id'
             }, status=status.HTTP_400_BAD_REQUEST)
         
-        # Get content type objects
+        # Get content type objects (accept both integer IDs and string model names)
+        def _get_content_type(type_val):
+            if isinstance(type_val, str) and not str(type_val).isdigit():
+                return ContentType.objects.get(app_label='collab', model=type_val.lower())
+            return ContentType.objects.get(id=type_val)
+
         try:
-            from_content_type = ContentType.objects.get(id=from_type)
-            to_content_type = ContentType.objects.get(id=to_type)
-        except ContentType.DoesNotExist:
+            from_content_type = _get_content_type(from_type)
+            to_content_type = _get_content_type(to_type)
+        except (ContentType.DoesNotExist, ValueError):
             return Response({
                 'error': 'Invalid content type',
                 'message': 'One or more content types do not exist'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Validate self-referential links before any DB work
+        if from_content_type == to_content_type and str(from_id) == str(to_id):
+            return Response({
+                'error': 'Invalid link',
+                'message': 'Content cannot link to itself'
             }, status=status.HTTP_400_BAD_REQUEST)
         
         # Get actual content objects and validate they're in the same world

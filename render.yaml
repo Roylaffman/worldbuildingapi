@@ -1,0 +1,92 @@
+# Render Infrastructure as Code
+# Author: Ryan Lafferty
+#
+# Two services:
+#   worldbuilding-backend  — Django/gunicorn Docker web service
+#   worldbuilding-frontend — Vite/React static site
+#
+# One managed Postgres database (free tier, 90-day limit on free plan).
+#
+# After first deploy, update CORS_ALLOWED_ORIGINS, CSRF_TRUSTED_ORIGINS, and
+# VITE_API_BASE_URL in the Render dashboard with your actual service URLs, then
+# trigger a redeploy of both services.
+
+services:
+  # ---------------------------------------------------------------------------
+  # Backend: Django + gunicorn (Docker)
+  # ---------------------------------------------------------------------------
+  - type: web
+    name: worldbuilding-backend
+    runtime: docker
+    # Render builds from the repo root; Dockerfile is at the repo root.
+    dockerfilePath: ./Dockerfile
+    region: oregon
+    plan: free
+    healthCheckPath: /api/v1/health/
+    envVars:
+      - key: DJANGO_ENV
+        value: production
+
+      - key: DEBUG
+        value: false
+
+      # Render generates a random value on first deploy; stored as a secret.
+      - key: SECRET_KEY
+        generateValue: true
+
+      # Render injects the internal connection string automatically.
+      - key: DATABASE_URL
+        fromDatabase:
+          name: worldbuilding-db
+          property: connectionString
+
+      # .onrender.com wildcard covers the auto-assigned subdomain.
+      # Add your custom domain here when ready, e.g.:
+      #   value: .onrender.com,worldbuilding.yourdomain.com
+      - key: ALLOWED_HOSTS
+        value: .onrender.com
+
+      # Set these to your frontend URL after first deploy.
+      # Example: https://worldbuilding-frontend.onrender.com
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
+
+      - key: CSRF_TRUSTED_ORIGINS
+        sync: false
+
+      # Leave unset to disable GCS media (files land in /tmp — ephemeral).
+      # To persist uploads, set GS_BUCKET_NAME + wire up a GCP service account
+      # key via GS_CREDENTIALS env var, or swap to AWS S3 with django-storages.
+      # - key: GS_BUCKET_NAME
+      #   value: your-gcs-bucket-name
+
+  # ---------------------------------------------------------------------------
+  # Frontend: Vite + React (Render Static Site)
+  # ---------------------------------------------------------------------------
+  - type: web
+    name: worldbuilding-frontend
+    runtime: static
+    buildCommand: cd frontend && npm ci && npm run build
+    staticPublishPath: ./frontend/dist
+    # SPA routing: all paths fall back to index.html.
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      # Must point to the backend's public URL. Vite embeds this at build time.
+      # Set in the Render dashboard before first deploy (or trigger a rebuild
+      # after the backend URL is known).
+      # Example: https://worldbuilding-backend.onrender.com/api/v1
+      - key: VITE_API_BASE_URL
+        sync: false
+
+# ---------------------------------------------------------------------------
+# Postgres database (free tier)
+# ---------------------------------------------------------------------------
+databases:
+  - name: worldbuilding-db
+    databaseName: worldbuilding
+    user: worldbuilding
+    plan: free
+    region: oregon

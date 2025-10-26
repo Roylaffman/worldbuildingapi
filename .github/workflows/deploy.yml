@@ -1,0 +1,122 @@
+name: Deploy to Cloud Run
+
+# Triggers:
+#   - push to main           → builds + deploys both services
+#   - manual via Actions tab → same, useful for re-rollouts
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+# Required for Workload Identity Federation (keyless auth to GCP).
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  PROJECT_ID:        ${{ secrets.GCP_PROJECT_ID }}
+  REGION:            ${{ secrets.GCP_REGION }}
+  AR_REPO:           ${{ secrets.GCP_AR_REPO }}
+  RUNTIME_SA:        ${{ secrets.GCP_RUNTIME_SA_EMAIL }}
+  SQL_INSTANCE:      ${{ secrets.GCP_SQL_INSTANCE }}      # project:region:instance
+  DB_NAME:           ${{ secrets.GCP_DB_NAME }}
+  DB_USER:           ${{ secrets.GCP_DB_USER }}
+  GCS_BUCKET:        ${{ secrets.GCP_GCS_BUCKET }}
+  BACKEND_SERVICE:   writing-backend
+  FRONTEND_SERVICE:  writing-frontend
+  ALLOWED_HOST:      writing.geoglypha1.org
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # ── Authenticate to GCP via Workload Identity (no JSON keys) ─────────
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
+          service_account: ${{ secrets.GCP_DEPLOY_SA_EMAIL }}
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker "${REGION}-docker.pkg.dev" --quiet
+
+      # Common image tag — short SHA so deploys are identifiable, plus :latest.
+      - name: Compute image tags
+        id: tags
+        run: |
+          SHA="${GITHUB_SHA::7}"
+          echo "sha=${SHA}" >> "$GITHUB_OUTPUT"
+          echo "backend=${REGION}-docker.pkg.dev/${PROJECT_ID}/${AR_REPO}/backend:${SHA}"  >> "$GITHUB_OUTPUT"
+          echo "frontend=${REGION}-docker.pkg.dev/${PROJECT_ID}/${AR_REPO}/frontend:${SHA}" >> "$GITHUB_OUTPUT"
+
+      # ── Backend ──────────────────────────────────────────────────────────
+      - name: Build & push backend image
+        working-directory: .
+        run: |
+          docker build -t "${{ steps.tags.outputs.backend }}" -f Dockerfile .
+          docker push "${{ steps.tags.outputs.backend }}"
+
+      - name: Deploy backend to Cloud Run
+        # Internal ingress only — frontend nginx will reach it via the run.app
+        # URL using the runtime SA's identity. Tighten further later if you
+        # want to require IAM-authenticated invocations only.
+        run: |
+          gcloud run deploy "${BACKEND_SERVICE}" \
+            --image="${{ steps.tags.outputs.backend }}" \
+            --region="${REGION}" \
+            --service-account="${RUNTIME_SA}" \
+            --add-cloudsql-instances="${SQL_INSTANCE}" \
+            --allow-unauthenticated \
+            --ingress=all \
+            --memory=512Mi \
+            --cpu=1 \
+            --min-instances=0 \
+            --max-instances=4 \
+            --set-env-vars="DJANGO_ENV=production,USE_POSTGRESQL=True,DEBUG=False,ALLOWED_HOSTS=${ALLOWED_HOST},CSRF_TRUSTED_ORIGINS=https://${ALLOWED_HOST},CORS_ALLOWED_ORIGINS=https://${ALLOWED_HOST},DB_NAME=${DB_NAME},DB_USER=${DB_USER},DB_HOST=/cloudsql/${SQL_INSTANCE},GS_BUCKET_NAME=${GCS_BUCKET},GS_PROJECT_ID=${PROJECT_ID},LOG_LEVEL=INFO" \
+            --set-secrets="SECRET_KEY=django-secret-key:latest,DB_PASSWORD=db-password:latest"
+
+      - name: Capture backend URL
+        id: backend_url
+        run: |
+          URL="$(gcloud run services describe "${BACKEND_SERVICE}" \
+            --region="${REGION}" --format='value(status.url)')"
+          echo "url=${URL}" >> "$GITHUB_OUTPUT"
+          echo "Backend URL: ${URL}"
+
+      # ── Frontend ─────────────────────────────────────────────────────────
+      - name: Build & push frontend image
+        working-directory: ./frontend
+        run: |
+          docker build \
+            --build-arg VITE_API_BASE_URL=/api/v1 \
+            -t "${{ steps.tags.outputs.frontend }}" \
+            -f Dockerfile .
+          docker push "${{ steps.tags.outputs.frontend }}"
+
+      - name: Deploy frontend to Cloud Run
+        run: |
+          gcloud run deploy "${FRONTEND_SERVICE}" \
+            --image="${{ steps.tags.outputs.frontend }}" \
+            --region="${REGION}" \
+            --service-account="${RUNTIME_SA}" \
+            --allow-unauthenticated \
+            --ingress=all \
+            --memory=256Mi \
+            --cpu=1 \
+            --min-instances=0 \
+            --max-instances=4 \
+            --set-env-vars="BACKEND_URL=${{ steps.backend_url.outputs.url }}"
+
+      - name: Print summary
+        run: |
+          FRONT="$(gcloud run services describe "${FRONTEND_SERVICE}" --region="${REGION}" --format='value(status.url)')"
+          echo "::notice::Frontend deployed at ${FRONT}"
+          echo "::notice::Backend  deployed at ${{ steps.backend_url.outputs.url }}"
+          echo "::notice::Map ${ALLOWED_HOST} → ${FRONT} via Cloud Run domain mapping, then add CNAME in Cloudflare."

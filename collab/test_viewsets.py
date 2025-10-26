@@ -219,8 +219,8 @@ class ContentViewSetTest(TestCase):
             'summary': 'Test summary',
             'tags': ['fantasy', 'adventure', 'magic']
         }
-        
-        response = self.client.post(f'/api/worlds/{self.world.id}/pages/', data)
+
+        response = self.client.post(f'/api/worlds/{self.world.id}/pages/', data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         
         # Check that tags were added
@@ -282,14 +282,16 @@ class ContentViewSetTest(TestCase):
         # Test author filtering
         response = self.client.get(f'/api/worlds/{self.world.id}/pages/', {'author': 'author1'})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]['author']['username'], 'author1')
-        
+        results = response.data['results']
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]['author']['username'], 'author1')
+
         # Test search filtering
         response = self.client.get(f'/api/worlds/{self.world.id}/pages/', {'search': 'fantasy'})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]['title'], 'Fantasy Page')
+        results = response.data['results']
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]['title'], 'Fantasy Page')
     
     def test_add_tags_endpoint(self):
         """Test adding tags to existing content."""
@@ -305,7 +307,7 @@ class ContentViewSetTest(TestCase):
         
         # Add tags
         data = {'tags': ['new-tag', 'another-tag']}
-        response = self.client.post(f'/api/worlds/{self.world.id}/pages/{page.id}/add-tags/', data)
+        response = self.client.post(f'/api/worlds/{self.world.id}/pages/{page.id}/add-tags/', data, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         
         # Check response
@@ -318,19 +320,19 @@ class ContentViewSetTest(TestCase):
         # Create pages
         page1 = Page.objects.create(
             title='Page 1',
-            content='Content 1',
+            content='Page content entry one',
             author=self.user1,
             world=self.world
         )
         page2 = Page.objects.create(
             title='Page 2',
-            content='Content 2',
+            content='Page content entry two',
             author=self.user1,
             world=self.world
         )
-        
+
         self.client.force_authenticate(user=self.user1)
-        
+
         # Add link
         data = {
             'links': [
@@ -340,9 +342,9 @@ class ContentViewSetTest(TestCase):
                 }
             ]
         }
-        response = self.client.post(f'/api/worlds/{self.world.id}/pages/{page1.id}/add-links/', data)
+        response = self.client.post(f'/api/worlds/{self.world.id}/pages/{page1.id}/add-links/', data, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        
+
         # Check response
         self.assertEqual(len(response.data['added_links']), 1)
         self.assertEqual(response.data['added_links'][0]['target_id'], page2.id)
@@ -352,13 +354,13 @@ class ContentViewSetTest(TestCase):
         # Create content with links
         page1 = Page.objects.create(
             title='Page 1',
-            content='Content 1',
+            content='Page content entry one',
             author=self.user1,
             world=self.world
         )
         page2 = Page.objects.create(
             title='Page 2',
-            content='Content 2',
+            content='Page content entry two',
             author=self.user2,
             world=self.world
         )
@@ -434,7 +436,7 @@ class EssayViewSetTest(TestCase):
         # Test minimum word count filter
         response = self.client.get(f'/api/worlds/{self.world.id}/essays/', {'min_words': '10'})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)  # Only long essay should match
+        self.assertEqual(len(response.data['results']), 1)  # Only long essay should match
 
 
 class CharacterViewSetTest(TestCase):
@@ -470,9 +472,9 @@ class CharacterViewSetTest(TestCase):
             'relationships': {'friend': 'Alice'}
         }
         
-        response = self.client.post(f'/api/worlds/{self.world.id}/characters/', data)
+        response = self.client.post(f'/api/worlds/{self.world.id}/characters/', data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        
+
         # Check character-specific fields
         self.assertEqual(response.data['full_name'], 'John Doe')
         self.assertEqual(response.data['species'], 'Human')
@@ -505,14 +507,16 @@ class CharacterViewSetTest(TestCase):
         # Test species filtering
         response = self.client.get(f'/api/worlds/{self.world.id}/characters/', {'species': 'Human'})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]['species'], 'Human')
-        
+        results = response.data['results']
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]['species'], 'Human')
+
         # Test occupation filtering
         response = self.client.get(f'/api/worlds/{self.world.id}/characters/', {'occupation': 'Mage'})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]['occupation'], 'Mage')
+        results = response.data['results']
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]['occupation'], 'Mage')
 
 
 class StoryViewSetTest(TestCase):
@@ -546,9 +550,9 @@ class StoryViewSetTest(TestCase):
             'main_characters': ['Hero', 'Villain']
         }
         
-        response = self.client.post(f'/api/worlds/{self.world.id}/stories/', data)
+        response = self.client.post(f'/api/worlds/{self.world.id}/stories/', data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        
+
         # Check story-specific fields
         self.assertEqual(response.data['genre'], 'Fantasy')
         self.assertEqual(response.data['story_type'], 'short_story')
@@ -582,14 +586,16 @@ class StoryViewSetTest(TestCase):
         # Test genre filtering
         response = self.client.get(f'/api/worlds/{self.world.id}/stories/', {'genre': 'Fantasy'})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]['genre'], 'Fantasy')
-        
+        results = response.data['results']
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]['genre'], 'Fantasy')
+
         # Test canonical filtering
         response = self.client.get(f'/api/worlds/{self.world.id}/stories/', {'is_canonical': 'true'})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
-        self.assertTrue(response.data[0]['is_canonical'])
+        results = response.data['results']
+        self.assertEqual(len(results), 1)
+        self.assertTrue(results[0]['is_canonical'])
 
 
 class PermissionTest(TestCase):

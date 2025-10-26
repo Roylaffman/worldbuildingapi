@@ -91,12 +91,6 @@ class ImmutableModelMixin:
         super().save(*args, **kwargs)
     
     def delete(self, *args, **kwargs):
-        # If this model supports soft delete, use that instead
-        if hasattr(self, 'soft_delete'):
-            user = kwargs.get('user')
-            self.soft_delete(user=user)
-            return
-            
         from .exceptions import ImmutabilityViolationError
         raise ImmutabilityViolationError(
             message=f"{self.__class__.__name__} content cannot be deleted",
@@ -871,6 +865,7 @@ class Character(ContentBase):
     )
     personality_traits = models.JSONField(
         default=list,
+        blank=True,
         help_text="List of personality traits"
     )
     physical_description = models.TextField(
@@ -883,6 +878,7 @@ class Character(ContentBase):
     )
     relationships = models.JSONField(
         default=dict,
+        blank=True,
         help_text="Relationships with other characters (JSON format)"
     )
     
@@ -934,6 +930,7 @@ class Story(ContentBase):
     )
     main_characters = models.JSONField(
         default=list,
+        blank=True,
         help_text="List of main character names or references"
     )
     word_count = models.PositiveIntegerField(

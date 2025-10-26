@@ -17,6 +17,13 @@ from datetime import timedelta
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# ----------------------------------------------------------------------------
+# Environment marker. In production (Cloud Run), set DJANGO_ENV=production.
+# Most other knobs key off this OR off DEBUG.
+# ----------------------------------------------------------------------------
+DJANGO_ENV = config('DJANGO_ENV', default='development')
+IS_PRODUCTION = DJANGO_ENV == 'production'
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
@@ -52,6 +59,9 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    # WhiteNoise serves static files in production; must come right after
+    # SecurityMiddleware per the WhiteNoise docs.
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'collab.middleware.APIVersionMiddleware',
     'collab.middleware.ImmutabilityEnforcementMiddleware',
@@ -89,10 +99,24 @@ WSGI_APPLICATION = 'worldbuilding.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-# Database configuration - can switch between SQLite and PostgreSQL
+# Database configuration.
+# Priority: DATABASE_URL (Render/Heroku standard) > individual DB_* vars > SQLite (dev).
 USE_POSTGRESQL = config('USE_POSTGRESQL', default=False, cast=bool)
+_DATABASE_URL = config('DATABASE_URL', default='')
 
-if USE_POSTGRESQL:
+if _DATABASE_URL:
+    # Render injects DATABASE_URL in postgres://... format. dj-database-url
+    # parses it and adds CONN_MAX_AGE + conn_health_checks for pooling.
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=_DATABASE_URL,
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
+    }
+elif USE_POSTGRESQL or IS_PRODUCTION:
+    # Fallback for Cloud Run / manual Postgres env vars (DB_HOST may be a
+    # Unix socket path like /cloudsql/PROJECT:REGION:INSTANCE).
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
@@ -101,11 +125,11 @@ if USE_POSTGRESQL:
             'PASSWORD': config('DB_PASSWORD', default=''),
             'HOST': config('DB_HOST', default='localhost'),
             'PORT': config('DB_PORT', default='5432'),
-            'CONN_MAX_AGE': 600,  # Connection pooling - keep connections alive for 10 minutes
+            'CONN_MAX_AGE': 600,
         }
     }
 else:
-    # Use SQLite for development
+    # SQLite for local development.
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
@@ -149,15 +173,35 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'  # collectstatic target
+
+# WhiteNoise: hashed, far-future-cached static asset names in production.
+if IS_PRODUCTION:
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Media files (User uploads)
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+# ----------------------------------------------------------------------------
+# Media files (user uploads)
+# ----------------------------------------------------------------------------
+# In production, store uploads in a Google Cloud Storage bucket via
+# django-storages. Locally we keep the filesystem default for simple dev.
+GS_BUCKET_NAME = config('GS_BUCKET_NAME', default='')
+
+if IS_PRODUCTION and GS_BUCKET_NAME:
+    DEFAULT_FILE_STORAGE = 'storages.backends.gcloud.GoogleCloudStorage'
+    GS_PROJECT_ID = config('GS_PROJECT_ID', default='')
+    # Cloud Run service account credentials are used automatically via ADC,
+    # so no GS_CREDENTIALS json file is needed in the container.
+    GS_DEFAULT_ACL = None  # Inherit bucket-level uniform access settings.
+    GS_QUERYSTRING_AUTH = False  # Public-read bucket → plain URLs work.
+    MEDIA_URL = f'https://storage.googleapis.com/{GS_BUCKET_NAME}/'
+else:
+    MEDIA_URL = '/media/'
+    MEDIA_ROOT = BASE_DIR / 'media'
 
 # Django REST Framework configuration
 REST_FRAMEWORK = {
@@ -200,7 +244,62 @@ CORS_ALLOWED_ORIGINS = config(
 
 CORS_ALLOW_CREDENTIALS = True
 
+# CSRF: when running behind the frontend nginx proxy on Cloud Run, the
+# Origin/Host arrives as writing.geoglypha1.org. We must trust that origin
+# explicitly for CSRF-protected endpoints (Django admin, session views).
+CSRF_TRUSTED_ORIGINS = config(
+    'CSRF_TRUSTED_ORIGINS',
+    default='http://localhost:3000,http://127.0.0.1:3000',
+    cast=lambda v: [s.strip() for s in v.split(',') if s.strip()],
+)
+
+# ----------------------------------------------------------------------------
 # Security settings
+# ----------------------------------------------------------------------------
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = 'DENY'
+
+if IS_PRODUCTION:
+    # Cloud Run terminates TLS at the load balancer and forwards to the
+    # container over HTTP with this header set. Tell Django to trust it so
+    # request.is_secure() returns True and CSRF/redirects behave correctly.
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SECURE_SSL_REDIRECT = config('SECURE_SSL_REDIRECT', default=False, cast=bool)
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = config('SECURE_HSTS_SECONDS', default=0, cast=int)
+
+# ----------------------------------------------------------------------------
+# Email — console backend by default. Wire up SendGrid/Mailgun later by
+# setting EMAIL_BACKEND + provider-specific env vars (django-anymail).
+# ----------------------------------------------------------------------------
+EMAIL_BACKEND = config(
+    'EMAIL_BACKEND', default='django.core.mail.backends.console.EmailBackend',
+)
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='noreply@geoglypha1.org')
+
+# ----------------------------------------------------------------------------
+# Logging — structured JSON to stdout in production so Cloud Logging picks it
+# up automatically. Plain text in dev for readability.
+# ----------------------------------------------------------------------------
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {name} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': config('LOG_LEVEL', default='INFO'),
+    },
+}

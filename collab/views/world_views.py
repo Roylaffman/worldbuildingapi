@@ -254,7 +254,7 @@ class WorldViewSet(viewsets.ModelViewSet):
         # Parse query parameters
         limit = min(int(request.query_params.get('limit', 50)), 200)
         offset = int(request.query_params.get('offset', 0))
-        content_types_param = request.query_params.get('content_types', '')
+        content_types_param = request.query_params.get('content_types', '') or request.query_params.get('content_type', '')
         author_username = request.query_params.get('author', '')
         tags_param = request.query_params.get('tags', '')
         start_date_param = request.query_params.get('start_date', '')

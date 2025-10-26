@@ -545,9 +545,10 @@ class StorySerializerTest(TestCase):
             author=self.user,
             world=self.world
         )
-        
+
         serializer = StorySerializer(story)
-        self.assertEqual(serializer.data['word_count'], 8)
+        # Content has 9 words: "This is a short story with exactly eight words."
+        self.assertEqual(serializer.data['word_count'], 9)
         
         # Word count should be in read-only fields
         self.assertIn('word_count', serializer.Meta.read_only_fields)

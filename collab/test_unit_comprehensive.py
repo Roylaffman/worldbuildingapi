@@ -669,7 +669,9 @@ class BusinessLogicTest(TestCase):
         self.user = User.objects.create_user(
             username='testuser',
             email='test@example.com',
-            password='testpass123'
+            password='testpass123',
+            first_name='Test',
+            last_name='User',
         )
         self.world = World.objects.create(
             title='Test World',
@@ -677,7 +679,7 @@ class BusinessLogicTest(TestCase):
             creator=self.user
         )
         self.client.force_authenticate(user=self.user)
-    
+
     def test_content_creation_workflow(self):
         """Test complete content creation workflow."""
         # Create page with tags
@@ -786,7 +788,7 @@ class BusinessLogicTest(TestCase):
         self.assertIn('attribution', response.data)
         attribution = response.data['attribution']
         self.assertIn('Created by', attribution)
-        self.assertIn('testuser', attribution)
+        self.assertIn('Test User', attribution)
         
         # Check collaboration info
         self.assertIn('collaboration_info', response.data)
