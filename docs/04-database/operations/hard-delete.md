@@ -11,7 +11,7 @@ These commands **permanently delete** data and **cannot be undone**. Always use 
 ### **1. List All Content**
 ```bash
 # See what's in your database
-python manage.py hard_delete_content list
+
 ```
 
 ### **2. Delete Specific Worlds**

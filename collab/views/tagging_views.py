@@ -132,6 +132,49 @@ class TagViewSet(viewsets.ModelViewSet):
             'total_content': sum(len(content_list) for content_list in content_by_type.values())
         })
     
+    @action(detail=False, methods=['get'], url_path='by-name/(?P<tag_name>[^/.]+)')
+    def by_name(self, request, tag_name=None, world_pk=None):
+        """Get a tag by name with its tagged content."""
+        world = self.get_world()
+        
+        try:
+            tag = Tag.objects.get(world=world, name=tag_name)
+        except Tag.DoesNotExist:
+            return Response({
+                'error': 'Tag not found',
+                'message': f'Tag "{tag_name}" does not exist in this world'
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        # Get all content that has this tag
+        tagged_content = []
+        content_models = {
+            'page': Page,
+            'essay': Essay,
+            'character': Character,
+            'story': Story,
+            'image': Image
+        }
+        
+        for type_name, model_class in content_models.items():
+            content_queryset = model_class.get_content_by_tag(world, tag.name)
+            
+            for content in content_queryset:
+                tagged_content.append({
+                    'object_id': content.id,
+                    'content_type': type_name,
+                    'title': content.title,
+                    'author_name': content.author.first_name or content.author.username,
+                    'created_at': content.created_at,
+                })
+        
+        # Sort by creation date (newest first)
+        tagged_content.sort(key=lambda x: x['created_at'], reverse=True)
+        
+        tag_data = TagSerializer(tag).data
+        tag_data['tagged_content'] = tagged_content
+        
+        return Response(tag_data)
+
     @action(detail=False, methods=['get'])
     def popular(self, request, world_pk=None):
         """Get the most popular tags in the world."""

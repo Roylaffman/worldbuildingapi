@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tagging & Linking System Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .test-section {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        #console-output {
+            background: #000;
+            color: #00ff00;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <h1>🏷️ Tagging & Linking System Test</h1>
+    
+    <div class="test-section">
+        <h2>📋 Test Instructions</h2>
+        <ol>
+            <li>Make sure the backend server is running on <code>http://localhost:8000</code></li>
+            <li>Make sure the frontend server is running on <code>http://localhost:3000</code></li>
+            <li>Open the main application in another tab: <a href="http://localhost:3000" target="_blank">http://localhost:3000</a></li>
+            <li>Login to the application with admin credentials</li>
+            <li>Navigate to a content page (e.g., /worlds/9/content/essay/1)</li>
+            <li>Come back to this tab and run the tests below</li>
+        </ol>
+    </div>
+
+    <div class="test-section">
+        <h2>🧪 Quick API Tests</h2>
+        <p>Test the backend API endpoints directly:</p>
+        <button class="test-button" onclick="testLogin()">Test Login</button>
+        <button class="test-button" onclick="testWorldsList()">Test Worlds List</button>
+        <button class="test-button" onclick="testTagsAPI()">Test Tags API</button>
+        <button class="test-button" onclick="testLinksAPI()">Test Links API</button>
+        <div id="api-results"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>🎯 Frontend Component Tests</h2>
+        <p>These tests require you to be on a content page in the main application:</p>
+        <button class="test-button" onclick="testFrontendComponents()">Test Frontend Components</button>
+        <button class="test-button" onclick="testTagManager()">Test TagManager</button>
+        <button class="test-button" onclick="testContentLinker()">Test ContentLinker</button>
+        <button class="test-button" onclick="testTagsPages()">Test Tags Pages</button>
+        <div id="frontend-results"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>📊 Console Output</h2>
+        <div id="console-output"></div>
+        <button class="test-button" onclick="clearConsole()">Clear Console</button>
+    </div>
+
+    <script>
+        // Capture console output
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+        
+        function appendToConsole(message, type = 'log') {
+            const consoleOutput = document.getElementById('console-output');
+            const timestamp = new Date().toLocaleTimeString();
+            const prefix = type === 'error' ? '❌' : type === 'warn' ? '⚠️' : '📝';
+            consoleOutput.textContent += `[${timestamp}] ${prefix} ${message}\n`;
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        }
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            appendToConsole(args.join(' '), 'log');
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            appendToConsole(args.join(' '), 'error');
+        };
+        
+        console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            appendToConsole(args.join(' '), 'warn');
+        };
+
+        function clearConsole() {
+            document.getElementById('console-output').textContent = '';
+        }
+
+        function showResult(containerId, message, type = 'info') {
+            const container = document.getElementById(containerId);
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${type}`;
+            resultDiv.textContent = message;
+            container.appendChild(resultDiv);
+        }
+
+        // API Test Functions
+        async function testLogin() {
+            console.log('🔐 Testing login...');
+            try {
+                const response = await fetch('http://localhost:8000/api/v1/auth/login/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: 'admin', password: 'admin123' })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    localStorage.setItem('token', data.access);
+                    console.log('✅ Login successful');
+                    showResult('api-results', 'Login successful', 'success');
+                } else {
+                    console.error('❌ Login failed');
+                    showResult('api-results', 'Login failed', 'error');
+                }
+            } catch (error) {
+                console.error('❌ Login error:', error);
+                showResult('api-results', `Login error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testWorldsList() {
+            console.log('🌍 Testing worlds list...');
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    console.error('❌ No token found - login first');
+                    showResult('api-results', 'No token found - login first', 'error');
+                    return;
+                }
+
+                const response = await fetch('http://localhost:8000/api/v1/worlds/', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (response.ok) {
+                    const worlds = await response.json();
+                    console.log(`✅ Found ${worlds.length} worlds`);
+                    showResult('api-results', `Found ${worlds.length} worlds`, 'success');
+                } else {
+                    console.error('❌ Worlds list failed');
+                    showResult('api-results', 'Worlds list failed', 'error');
+                }
+            } catch (error) {
+                console.error('❌ Worlds list error:', error);
+                showResult('api-results', `Worlds list error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testTagsAPI() {
+            console.log('🏷️ Testing tags API...');
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    console.error('❌ No token found - login first');
+                    showResult('api-results', 'No token found - login first', 'error');
+                    return;
+                }
+
+                // Test with world ID 9 (adjust as needed)
+                const response = await fetch('http://localhost:8000/api/v1/worlds/9/tags/', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (response.ok) {
+                    const tags = await response.json();
+                    console.log(`✅ Found ${tags.length} tags`);
+                    showResult('api-results', `Found ${tags.length} tags in world 9`, 'success');
+                } else {
+                    console.error('❌ Tags API failed');
+                    showResult('api-results', 'Tags API failed', 'error');
+                }
+            } catch (error) {
+                console.error('❌ Tags API error:', error);
+                showResult('api-results', `Tags API error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testLinksAPI() {
+            console.log('🔗 Testing links API...');
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    console.error('❌ No token found - login first');
+                    showResult('api-results', 'No token found - login first', 'error');
+                    return;
+                }
+
+                // Test with world ID 9 (adjust as needed)
+                const response = await fetch('http://localhost:8000/api/v1/worlds/9/links/', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (response.ok) {
+                    const links = await response.json();
+                    console.log(`✅ Found ${links.length} links`);
+                    showResult('api-results', `Found ${links.length} links in world 9`, 'success');
+                } else {
+                    console.error('❌ Links API failed');
+                    showResult('api-results', 'Links API failed', 'error');
+                }
+            } catch (error) {
+                console.error('❌ Links API error:', error);
+                showResult('api-results', `Links API error: ${error.message}`, 'error');
+            }
+        }
+
+        // Frontend Test Functions
+        function testFrontendComponents() {
+            console.log('🎯 Testing frontend components...');
+            
+            // Check if we can access the main application
+            try {
+                const mainWindow = window.open('http://localhost:3000', 'mainApp');
+                if (mainWindow) {
+                    console.log('✅ Main application window opened');
+                    showResult('frontend-results', 'Main application window opened - navigate to a content page', 'info');
+                } else {
+                    console.error('❌ Could not open main application');
+                    showResult('frontend-results', 'Could not open main application', 'error');
+                }
+            } catch (error) {
+                console.error('❌ Frontend test error:', error);
+                showResult('frontend-results', `Frontend test error: ${error.message}`, 'error');
+            }
+        }
+
+        function testTagManager() {
+            console.log('🏷️ Testing TagManager component...');
+            showResult('frontend-results', 'TagManager test requires manual interaction in main app', 'info');
+        }
+
+        function testContentLinker() {
+            console.log('🔗 Testing ContentLinker component...');
+            showResult('frontend-results', 'ContentLinker test requires manual interaction in main app', 'info');
+        }
+
+        function testTagsPages() {
+            console.log('📄 Testing Tags pages...');
+            
+            try {
+                const tagsWindow = window.open('http://localhost:3000/worlds/9/tags', 'tagsPage');
+                if (tagsWindow) {
+                    console.log('✅ Tags page opened');
+                    showResult('frontend-results', 'Tags page opened in new window', 'success');
+                } else {
+                    console.error('❌ Could not open tags page');
+                    showResult('frontend-results', 'Could not open tags page', 'error');
+                }
+            } catch (error) {
+                console.error('❌ Tags page test error:', error);
+                showResult('frontend-results', `Tags page test error: ${error.message}`, 'error');
+            }
+        }
+
+        // Initialize
+        console.log('🚀 Tagging & Linking Test Page Loaded');
+        console.log('📋 Follow the instructions above to run tests');
+    </script>
+</body>
+</html>

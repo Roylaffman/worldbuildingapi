@@ -1,288 +1,164 @@
-# Documentation - Collaborative Worldbuilding Platform
+# 📚 Collaborative Worldbuilding Platform - Documentation
 
-## Overview
+Welcome to the comprehensive documentation for the Collaborative Worldbuilding Platform. This documentation is organized into logical sections to help you find information quickly and efficiently.
 
-This directory contains comprehensive documentation for the Collaborative Worldbuilding Platform, including API documentation, testing guides, and development resources.
+## 🗂️ Documentation Structure
 
-## Documentation Index
+### [🚀 01. Getting Started](01-getting-started/README.md)
+**New to the project? Start here!**
+- [Installation Guide](01-getting-started/installation.md)
+- [Quick Start Guide](01-getting-started/quick-start.md)
+- [Project Overview](01-getting-started/project-overview.md)
 
-### 📚 Core Documentation
+### [🎨 02. Frontend Documentation](02-frontend/README.md)
+**React frontend development and components**
+- [Setup Guide](02-frontend/setup.md)
+- [Components](02-frontend/components/) - TagManager, ContentLinker, UI components
+- [Implementation](02-frontend/implementation/) - Content pages, authentication, API integration
+- [Troubleshooting](02-frontend/troubleshooting/) - Common issues and debugging
+- [Roadmap](02-frontend/roadmap.md) - Future improvements
 
-#### [API Documentation](api_documentation.md)
-Complete API reference with endpoints, request/response formats, authentication, and examples.
+### [⚙️ 03. Backend Documentation](03-backend/README.md)
+**Django REST Framework backend and APIs**
+- [API Documentation](03-backend/api/) - Complete API reference
+- [Models](03-backend/models/) - Data models and relationships
+- [Testing](03-backend/testing/) - Backend testing strategies
+- [Architecture](03-backend/architecture.md) - System design
 
-**Contents:**
-- Authentication endpoints (JWT)
-- World management API
-- Content creation and management (Pages, Characters, Stories, Essays, Images)
-- Tagging and linking systems
-- Search and discovery features
-- Error handling and status codes
-- Rate limiting and pagination
+### [🗄️ 04. Database Documentation](04-database/README.md)
+**Database schema, operations, and PostgreSQL migration**
+- [Schema](04-database/schema/) - Database structure and tables
+- [Operations](04-database/operations/) - Inspection, soft delete, cleanup
+- [PostgreSQL Migration](04-database/postgres-migration/) - Migration from SQLite
+- [Analysis Reports](04-database/analysis-reports.md) - Performance analysis
 
-#### [Testing Guide](testing_guide.md)
-Comprehensive guide to the testing strategy, test suite structure, and testing best practices.
+### [🚀 05. Deployment Documentation](05-deployment/README.md)
+**Local development, cloud deployment, and production setup**
+- [Local Development](05-deployment/local/) - Docker and local setup
+- [Cloud Deployment](05-deployment/cloud/) - AWS, GCP, and provider comparison
+- [Production](05-deployment/production/) - Production deployment and monitoring
 
-**Contents:**
-- Test suite organization and structure
-- Running tests and generating coverage reports
-- Test patterns and best practices
-- Debugging and maintenance guidelines
-- Contributing to the test suite
+### [🧪 06. Testing Documentation](06-testing/README.md)
+**Comprehensive testing strategies and guides**
+- [Frontend Testing](06-testing/frontend/) - Component and integration tests
+- [Backend Testing](06-testing/backend/) - API and unit tests
+- [End-to-End Testing](06-testing/end-to-end/) - User workflow tests
+- [Testing Guide](06-testing/testing-guide.md) - General testing practices
 
-#### [Test Report](test_report.md)
-Detailed analysis of current test suite performance, coverage, and recommendations.
+### [👨‍💻 07. Development Documentation](07-development/README.md)
+**Development guides, planning, and project management**
+- [Planning](07-development/planning/) - Project status, roadmaps, task tracking
+- [Guides](07-development/guides/) - Coding standards, Git workflow
+- [Features](07-development/features/) - Feature implementation details
+- [Troubleshooting](07-development/troubleshooting/) - Development issues
 
-**Contents:**
-- Test execution results and metrics
-- Issue analysis and prioritization
-- Coverage analysis and gaps
-- Performance metrics
-- Recommendations for improvement
+### [📋 08. Specifications](08-specs/README.md)
+**Project specifications and requirements**
+- [Requirements](08-specs/requirements/) - Functional and technical requirements
+- [Design](08-specs/design/) - System and UI/UX design
+- [Implementation](08-specs/implementation/) - Task breakdown and status
 
-### 🚀 Getting Started
+### [📦 09. Archive](09-archive/README.md)
+**Historical documentation and deprecated content**
+- [Old Implementations](09-archive/old-implementations/) - Deprecated code
+- [Experiment Logs](09-archive/experiment-logs/) - Development experiments
+- [Session Summaries](09-archive/session-summaries/) - Historical development logs
 
-#### [Frontend Setup Guide](../frontend_setup.md)
-Instructions for setting up and testing the frontend interface.
+## 🎯 Quick Access
 
-**Contents:**
-- Quick start instructions
-- Frontend test interface usage
-- API endpoint testing
-- Development notes and next steps
+### For New Developers
+1. [Getting Started](01-getting-started/README.md) - Project overview and setup
+2. [Frontend Setup](02-frontend/setup.md) - Frontend development environment
+3. [Backend Architecture](03-backend/architecture.md) - Understanding the backend
+4. [Database Schema](04-database/schema/README.md) - Data structure overview
 
-#### [Progress Summary](../PROGRESS_SUMMARY.md)
-Complete overview of project status, completed features, and technical architecture.
+### For Frontend Developers
+- [Frontend Documentation](02-frontend/README.md) - Complete frontend guide
+- [Component Documentation](02-frontend/components/) - Reusable components
+- [API Integration](02-frontend/implementation/api-integration.md) - Backend communication
+- [Troubleshooting](02-frontend/troubleshooting/) - Common frontend issues
 
-**Contents:**
-- Project overview and status
-- Completed features checklist
-- Technical architecture details
-- API endpoints summary
-- Known issues and next steps
+### For Backend Developers
+- [Backend Documentation](03-backend/README.md) - Complete backend guide
+- [API Reference](03-backend/api/endpoints-reference.md) - All API endpoints
+- [Models Documentation](03-backend/models/data-model.md) - Data models
+- [Testing Guide](03-backend/testing/README.md) - Backend testing
 
-### 🔧 Development Resources
+### For DevOps/Deployment
+- [Deployment Documentation](05-deployment/README.md) - All deployment options
+- [Docker Setup](05-deployment/local/docker.md) - Containerized deployment
+- [Cloud Deployment](05-deployment/cloud/) - AWS and GCP guides
+- [Production Checklist](05-deployment/production/checklist.md) - Go-live checklist
 
-#### Test Scripts
-Standalone testing scripts for API validation:
-- [`test_api_endpoints.py`](../test_api_endpoints.py) - Basic API functionality testing
-- [`test_tagging_linking.py`](../test_tagging_linking.py) - Tagging and linking features
-- [`test_urls.py`](../test_urls.py) - URL routing and availability testing
+### For QA/Testing
+- [Testing Documentation](06-testing/README.md) - Complete testing guide
+- [Frontend Tests](06-testing/frontend/) - UI and component testing
+- [Backend Tests](06-testing/backend/) - API and integration testing
+- [E2E Tests](06-testing/end-to-end/) - User workflow testing
 
-#### Frontend Testing
-- [`simple_frontend_test.html`](../simple_frontend_test.html) - Browser-based API testing interface
+## 🔍 Finding Information
 
-## Quick Reference
+### By Topic
+- **Authentication**: [Frontend Auth](02-frontend/implementation/authentication.md) | [Backend Auth](03-backend/api/authentication.md)
+- **Content Management**: [Frontend Components](02-frontend/components/content-management.md) | [Backend API](03-backend/api/content.md)
+- **Tagging System**: [Frontend Implementation](02-frontend/components/tagging-system.md) | [Backend API](03-backend/api/tagging.md)
+- **Database**: [Schema](04-database/schema/) | [Operations](04-database/operations/) | [Migration](04-database/postgres-migration/)
+- **Deployment**: [Local](05-deployment/local/) | [Cloud](05-deployment/cloud/) | [Production](05-deployment/production/)
 
-### API Base URL
-```
-http://localhost:8000/api/
-```
+### By Role
+- **Project Manager**: [Planning](07-development/planning/) | [Specifications](08-specs/)
+- **Frontend Developer**: [Frontend Docs](02-frontend/) | [Frontend Testing](06-testing/frontend/)
+- **Backend Developer**: [Backend Docs](03-backend/) | [Database Docs](04-database/)
+- **DevOps Engineer**: [Deployment Docs](05-deployment/) | [Production Guides](05-deployment/production/)
+- **QA Engineer**: [Testing Docs](06-testing/) | [Troubleshooting](07-development/troubleshooting/)
 
-### Authentication
-```bash
-# Login
-curl -X POST http://localhost:8000/api/auth/login/ \
-  -H "Content-Type: application/json" \
-  -d '{"username": "your_username", "password": "your_password"}'
+## 📈 Project Status
 
-# Use token
-curl -H "Authorization: Bearer your_jwt_token" \
-  http://localhost:8000/api/worlds/
-```
+- **Current Version**: Development Phase
+- **Backend Status**: ✅ Fully Functional (Django REST Framework)
+- **Frontend Status**: ✅ Fully Functional (React + TypeScript)
+- **Database Status**: ✅ SQLite (Development) | 🔄 PostgreSQL Migration Planned
+- **Deployment Status**: 🔄 Local Development | ⏳ Production Deployment Planned
+- **Testing Status**: ✅ Backend Tests | ✅ Frontend Tests | 🔄 E2E Tests
 
-### Running Tests
-```bash
-# Run all tests
-python manage.py test
-
-# Run with coverage
-coverage run --source='.' manage.py test collab
-coverage report
-```
-
-### Key Features
-
-#### ✅ Implemented Features
-- **JWT Authentication**: Complete user registration, login, and token management
-- **World Management**: Create and manage collaborative worlds
-- **Content Creation**: Immutable content types (Pages, Essays, Characters, Stories, Images)
-- **Tagging System**: Flexible content organization and discovery
-- **Linking System**: Bidirectional content relationships
-- **Attribution System**: Comprehensive collaboration tracking and attribution
-- **Chronological Viewing**: Timeline-based content exploration
-- **Search & Discovery**: Full-text search and content filtering
-- **Immutability Enforcement**: Content integrity and proper attribution
-
-#### 🔄 In Progress
-- **Comprehensive Testing**: 223 tests with 88.8% pass rate
-- **Documentation**: Complete API and testing documentation
-
-#### ⏳ Planned
-- **Frontend Implementation**: User-friendly web interface
-- **Performance Optimization**: Load testing and optimization
-- **Deployment Configuration**: Production-ready setup
-
-## Architecture Overview
-
-### Backend Stack
-- **Django 4.2+**: Web framework
-- **Django REST Framework**: API framework
-- **PostgreSQL**: Primary database
-- **JWT Authentication**: Token-based authentication
-- **Python 3.8+**: Programming language
-
-### Key Design Principles
-- **Immutable Content**: Ensures content integrity and proper attribution
-- **Collaborative Attribution**: Tracks and displays all contributions
-- **RESTful API**: Standard API design patterns
-- **Comprehensive Testing**: High test coverage and quality assurance
-
-### Database Design
-- **Normalized Schema**: Proper relationships and constraints
-- **Generic Foreign Keys**: Flexible content relationships
-- **Full-text Search**: PostgreSQL search capabilities
-- **Optimized Indexes**: Performance-optimized queries
-
-## API Endpoints Summary
-
-### Authentication
-- `POST /api/auth/register/` - User registration
-- `POST /api/auth/login/` - User login
-- `POST /api/auth/refresh/` - Token refresh
-- `GET /api/auth/user/` - User profile
-
-### World Management
-- `GET /api/worlds/` - List worlds
-- `POST /api/worlds/` - Create world
-- `GET /api/worlds/{id}/` - World details
-- `GET /api/worlds/{id}/contributors/` - World contributors
-- `GET /api/worlds/{id}/timeline/` - Content timeline
-- `GET /api/worlds/{id}/attribution_report/` - Attribution analysis
-
-### Content Management
-- `GET/POST /api/worlds/{world_id}/pages/` - Page management
-- `GET/POST /api/worlds/{world_id}/essays/` - Essay management
-- `GET/POST /api/worlds/{world_id}/characters/` - Character management
-- `GET/POST /api/worlds/{world_id}/stories/` - Story management
-- `GET/POST /api/worlds/{world_id}/images/` - Image management
-
-### Tagging & Linking
-- `GET/POST /api/worlds/{world_id}/tags/` - Tag management
-- `GET/POST /api/worlds/{world_id}/links/` - Link management
-- `POST /api/worlds/{world_id}/{content_type}s/{id}/add-tags/` - Add tags
-- `POST /api/worlds/{world_id}/{content_type}s/{id}/add-links/` - Add links
-
-### Search & Discovery
-- `GET /api/worlds/{world_id}/search/` - Content search
-- `GET /api/worlds/{world_id}/{content_type}s/{id}/related/` - Related content
-
-## Testing Overview
-
-### Test Statistics
-- **Total Tests**: 223
-- **Pass Rate**: 88.8% (198 passing)
-- **Test Categories**: 6 main test modules
-- **Coverage Areas**: Models, Serializers, ViewSets, Authentication, Immutability, Integration
-
-### Test Execution
-```bash
-# Basic test run
-python manage.py test collab
-
-# Verbose output
-python manage.py test --verbosity=2
-
-# Specific test module
-python manage.py test collab.test_models
-
-# With coverage
-coverage run --source='.' manage.py test collab
-coverage html
-```
-
-## Development Workflow
-
-### Adding New Features
-1. **Write Tests First**: Follow TDD principles
-2. **Update Models**: Add/modify Django models
-3. **Create Serializers**: Handle API data transformation
-4. **Implement Views**: Create API endpoints
-5. **Update URLs**: Configure routing
-6. **Test Integration**: Ensure feature works end-to-end
-7. **Update Documentation**: Keep docs current
-
-### Code Quality Standards
-- **Test Coverage**: Maintain >90% test coverage
-- **Code Style**: Follow PEP 8 and Django conventions
-- **Documentation**: Document all public APIs and complex logic
-- **Security**: Follow Django security best practices
-- **Performance**: Optimize database queries and API responses
-
-## Troubleshooting
+## 🆘 Getting Help
 
 ### Common Issues
+- [Frontend Troubleshooting](02-frontend/troubleshooting/)
+- [Backend Issues](03-backend/testing/test-reports.md)
+- [Database Problems](04-database/operations/)
+- [Deployment Issues](05-deployment/)
 
-#### Test Failures
-- Check model validation requirements
-- Ensure test data meets validation rules
-- Use `format='json'` for complex API test data
-- Verify authentication in protected endpoint tests
+### Development Support
+- [Development Guides](07-development/guides/)
+- [Coding Standards](07-development/guides/coding-standards.md)
+- [Git Workflow](07-development/guides/git-workflow.md)
 
-#### API Errors
-- Check authentication headers
-- Validate request data format
-- Review error response details
-- Ensure proper content types
+### Contact & Contribution
+- Check existing documentation first
+- Review [troubleshooting guides](07-development/troubleshooting/)
+- Follow [development guides](07-development/guides/) for contributions
 
-#### Database Issues
-- Run migrations: `python manage.py migrate`
-- Check database connection settings
-- Verify model constraints and relationships
+## 🎉 Key Features Documented
 
-### Getting Help
+### ✅ Fully Documented
+- **Content Management System**: Create, edit, organize content (pages, essays, characters, stories, images)
+- **Tagging System**: Flexible content organization with custom tags
+- **Linking System**: Bidirectional relationships between content pieces
+- **User Authentication**: JWT-based secure authentication
+- **Multi-user Collaboration**: Shared worlds and collaborative content creation
+- **Content Discovery**: Tag-based and link-based content exploration
 
-1. **Check Documentation**: Review relevant documentation sections
-2. **Run Tests**: Use test suite to identify issues
-3. **Check Logs**: Review Django and application logs
-4. **Debug Mode**: Enable Django debug mode for development
-5. **API Testing**: Use provided test scripts or frontend interface
+### 🔄 In Progress
+- **PostgreSQL Migration**: Moving from SQLite to PostgreSQL
+- **Production Deployment**: Cloud deployment setup
+- **Advanced Features**: Real-time collaboration, advanced search
 
-## Contributing
-
-### Documentation Updates
-- Keep documentation current with code changes
-- Follow existing documentation structure and style
-- Include examples and practical usage information
-- Update API documentation for endpoint changes
-
-### Test Contributions
-- Write tests for new features
-- Maintain test quality and coverage
-- Follow existing test patterns
-- Update test documentation
-
-### Code Contributions
-- Follow established coding standards
-- Include comprehensive tests
-- Update relevant documentation
-- Ensure backward compatibility
-
-## Resources
-
-### External Documentation
-- [Django Documentation](https://docs.djangoproject.com/)
-- [Django REST Framework](https://www.django-rest-framework.org/)
-- [JWT Authentication](https://django-rest-framework-simplejwt.readthedocs.io/)
-- [PostgreSQL Documentation](https://www.postgresql.org/docs/)
-
-### Development Tools
-- [Django Debug Toolbar](https://django-debug-toolbar.readthedocs.io/)
-- [Coverage.py](https://coverage.readthedocs.io/)
-- [Postman](https://www.postman.com/) - API testing
-- [pgAdmin](https://www.pgadmin.org/) - PostgreSQL management
+### ⏳ Planned
+- **Performance Optimization**: Caching, query optimization
+- **Mobile App**: Native mobile applications
+- **Advanced Analytics**: Usage analytics and insights
 
 ---
 
-*Last Updated: September 27, 2025*
-*Documentation Version: 1.0*
+**📚 This documentation is continuously updated as the project evolves. Each section contains detailed guides, examples, and troubleshooting information to support development and deployment activities.**
