@@ -18,12 +18,14 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    # 'django.contrib.gis',  # GeoDjango for spatial data - requires GDAL/PostGIS
     
     # Third party apps
     'rest_framework',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
+    # 'rest_framework_gis',  # DRF GIS support - requires GDAL
     
     # Local apps
     'collab',
