@@ -71,11 +71,6 @@ CORS_ALLOW_CREDENTIALS = True
 LOGGING['handlers']['console']['level'] = 'WARNING'
 LOGGING['handlers']['file']['level'] = 'ERROR'
 LOGGING['loggers']['django']['level'] = 'WARNING'
-LOGGING['loggers']['memory_maps'] = {
-    'handlers': ['console', 'file'],
-    'level': 'INFO',
-    'propagate': False,
-}
 
 # Cache configuration - Use Redis in production
 CACHES = {
